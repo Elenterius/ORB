@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 public final class DevEnvironment {
 
-	public static final int NUMBER_OF_ITEMS = 42;
+	public static final int NUMBER_OF_ITEMS = 10_000;
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, ORBMod.MOD_ID);
 
 	private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ORBMod.MOD_ID);
@@ -33,11 +33,12 @@ public final class DevEnvironment {
 	}
 
 	static void init(IEventBus modEventBus) {
-		TextProvider textProvider = new TextProvider();
+		StringProvider provider = new StringProvider();
 
 		for (int i = 0; i < NUMBER_OF_ITEMS; i++) {
-			List<String> text = textProvider.linesFromAlice29(2);
-			ITEMS.register("dev_item_" + i, () -> new TestItem(text));
+			String name = provider.getToolName();
+			List<String> text = provider.getTextFromAlice29(3);
+			ITEMS.register("dev_item_" + i, () -> new TestItem(name, text));
 		}
 		ITEMS.register(modEventBus);
 
@@ -52,11 +53,18 @@ public final class DevEnvironment {
 
 	private static class TestItem extends Item {
 
+		private final MutableComponent nameComponent;
 		private final List<MutableComponent> textComponents;
 
-		public TestItem(List<String> text) {
+		public TestItem(String name, List<String> text) {
 			super(new Properties());
 			textComponents = text.stream().map(Component::literal).toList();
+			nameComponent = Component.literal(name);
+		}
+
+		@Override
+		public Component getName(ItemStack stack) {
+			return nameComponent;
 		}
 
 		@Override
@@ -66,12 +74,49 @@ public final class DevEnvironment {
 
 	}
 
-	private static class TextProvider {
+	private static class StringProvider {
 
 		private final Random random = new Random(42);
 
 		private @Nullable List<String> alice29;
 		private int alice29LineNumber = 0;
+
+		private int toolNameIndex = 0;
+
+		private String[] toolPrefix = {
+				"", "Ancient", "Blazing", "Blessed", "Cursed", "Bleeding", "Shiny", "Gloomy", "Bright", "Dark", "Hallow", "Hollow",
+				"Broken", "Brittle", "Tough", "Glowing", "Magic", "Enchanted", "Freezing"
+		};
+		private String[] toolMaterials = {
+				"Ruby", "Emerald", "Sapphire", "Quartz", "Obsidian", "Amethyst",
+				"Amber", "Bone", "Necrotic Bone", "Slime", "Quicksilver",
+				"Tin", "Nickle", "Bronze", "Copper", "Steel", "Lead", "Silver", "Aluminium",
+				"Pig Iron", "Rose Gold", "Electrum", "Manyullyn",
+				"Cobalt", "Titanium", "Osmium", "Platinum", "Tungsten", "Palladium"
+		};
+		private String[] toolTypes = {
+				"Needle", "Shears", "Scissors", "Knife",
+				"Pickaxe", "Shovel", "Hoe", "Axe", "Hammer", "Paxel", "Scythe", "Kama", "Mattock", "Pickdaze",
+				"Excavator", "Sledge Hammer", "Vein Hammer", "Broad Axe",
+				"Bow", "Crossbow", "Gun", "Rifle", "Cannon", "Longbow",
+				"Cleaver", "War Pick",
+				"Sword", "Broadsword", "Longsword", "Dagger", "Rapier", "Spear", "Javelin", "Claws"
+		};
+
+		public static List<String> readAllNonEmptyLines(String resourcePath) {
+			try (InputStream in = ClassLoader.getSystemResourceAsStream(resourcePath)) {
+				if (in == null) {
+					throw new RuntimeException("Resource not found: " + resourcePath);
+				}
+
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
+					return reader.lines().map(String::trim).filter(line -> !line.isEmpty()).collect(Collectors.toList());
+				}
+			}
+			catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 
 		private String randomAlphabetString(int length) {
 			return randomString("abcdefghijklmnopqrstuvwxyz", length);
@@ -100,31 +145,34 @@ public final class DevEnvironment {
 			return List.of(pangrams[a], pangrams[b]);
 		}
 
-		private List<String> linesFromAlice29(int count) {
+		private String getToolName() {
+			int prefixIndex = toolNameIndex / (toolTypes.length * toolMaterials.length);
+			int materialIndex = (toolNameIndex / toolTypes.length) % toolMaterials.length;
+			int typeIndex = toolNameIndex % toolTypes.length;
+
+			toolNameIndex = (toolNameIndex + 1) % (toolTypes.length * toolMaterials.length * toolPrefix.length);
+
+			return (toolPrefix[prefixIndex] + " " + toolMaterials[materialIndex] + " " + toolTypes[typeIndex]).trim();
+		}
+
+		private String getOneLineFromAlice29() {
+			if (alice29 == null) {
+				alice29 = readAllNonEmptyLines("canterbury_corpus/alice29.txt");
+			}
+
+			return alice29.get(alice29LineNumber++ % (alice29.size() - 1));
+		}
+
+		private List<String> getTextFromAlice29(int lineCount) {
 			if (alice29 == null) {
 				alice29 = readAllNonEmptyLines("canterbury_corpus/alice29.txt");
 			}
 
 			List<String> lines = new ArrayList<>();
-			for (int i = 0; i < count; i++) {
+			for (int i = 0; i < lineCount; i++) {
 				lines.add(alice29.get(alice29LineNumber++ % (alice29.size() - 1)));
 			}
 			return lines;
-		}
-
-		public static List<String> readAllNonEmptyLines(String resourcePath) {
-			try (InputStream in = ClassLoader.getSystemResourceAsStream(resourcePath)) {
-				if (in == null) {
-					throw new RuntimeException("Resource not found: " + resourcePath);
-				}
-
-				try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
-					return reader.lines().map(String::trim).filter(line -> !line.isEmpty()).collect(Collectors.toList());
-				}
-			}
-			catch (IOException e) {
-				throw new RuntimeException(e);
-			}
 		}
 
 	}
