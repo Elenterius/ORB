@@ -1,3 +1,6 @@
+# enviroment variables
+.env
+
 # eclipse
 bin
 *.launch
@@ -21,6 +24,8 @@ build
 eclipse
 run
 runs
-run-data
-
 repo
+
+# generated data
+/src/generated/resources/.cache/
+/src/generated/resources/data/optimized_recipe_book
