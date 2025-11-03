@@ -1,4 +1,4 @@
 @NullMarked
-package com.github.elenterius.orb.init;
+package com.github.elenterius.orb.dev;
 
 import org.jspecify.annotations.NullMarked;

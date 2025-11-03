@@ -1,4 +1,4 @@
-package com.github.elenterius.orb.init;
+package com.github.elenterius.orb.dev;
 
 import com.github.elenterius.orb.ORBMod;
 import net.minecraft.core.registries.Registries;
@@ -7,6 +7,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.*;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 
 public final class DevEnvironment {
 
-	public static final int NUMBER_OF_ITEMS = 10_000;
+	public static final int NUMBER_OF_ITEMS = 15_000;
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, ORBMod.MOD_ID);
 
 	private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ORBMod.MOD_ID);
@@ -32,7 +33,9 @@ public final class DevEnvironment {
 	private DevEnvironment() {
 	}
 
-	static void init(IEventBus modEventBus) {
+	public static void init() {
+		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
 		StringProvider provider = new StringProvider();
 
 		for (int i = 0; i < NUMBER_OF_ITEMS; i++) {

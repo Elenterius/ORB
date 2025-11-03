@@ -1,4 +1,4 @@
-package com.github.elenterius.orb.datagen;
+package com.github.elenterius.orb.dev.datagen;
 
 import com.github.elenterius.orb.ORBMod;
 import net.minecraft.advancements.CriterionTriggerInstance;

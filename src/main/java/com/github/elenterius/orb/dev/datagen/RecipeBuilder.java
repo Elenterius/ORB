@@ -1,4 +1,4 @@
-package com.github.elenterius.orb.datagen;
+package com.github.elenterius.orb.dev.datagen;
 
 import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.advancements.critereon.ContextAwarePredicate;

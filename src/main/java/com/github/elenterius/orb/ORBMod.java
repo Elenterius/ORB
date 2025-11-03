@@ -1,6 +1,6 @@
 package com.github.elenterius.orb;
 
-import com.github.elenterius.orb.init.CommonSetup;
+import com.github.elenterius.orb.core.CommonHandler;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
@@ -11,10 +11,10 @@ public class ORBMod {
 
 	public static final String MOD_ID = "optimized_recipe_book";
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+	public static final Logger LOGGER = LogUtils.getLogger();
 
 	public ORBMod() {
-		CommonSetup.onModInit();
+		CommonHandler.onModInit();
     }
 
 	public static ResourceLocation rl(String path) {
