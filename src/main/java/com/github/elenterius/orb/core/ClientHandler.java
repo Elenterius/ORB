@@ -1,6 +1,7 @@
 package com.github.elenterius.orb.core;
 
 import com.github.elenterius.orb.ORBMod;
+import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -19,11 +20,11 @@ public class ClientHandler {
 		Runtime.getRuntime().addShutdownHook(new Thread(SEARCH_TREE_UPDATER::shutdown)); //note: shutdown hooks only work on the client side
 	}
 
-	public static <T> void startSearchTreeRebuild(SearchTreeUpdater.TreeEntryExtension<T> treeEntry, List<T> values) {
+	public static <T> void startSearchTreeRebuild(SearchRegistry.TreeEntry<T> treeEntry, List<T> values) {
 		SEARCH_TREE_UPDATER.submitRebuild(treeEntry, values);
 	}
 
-	public static <T> void startSearchTreeRefresh(SearchTreeUpdater.TreeEntryExtension<T> treeEntry) {
+	public static <T> void startSearchTreeRefresh(SearchRegistry.TreeEntry<T> treeEntry) {
 		SEARCH_TREE_UPDATER.submitRefresh(treeEntry);
 	}
 

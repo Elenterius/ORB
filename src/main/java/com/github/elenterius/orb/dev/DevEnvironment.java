@@ -86,24 +86,28 @@ public final class DevEnvironment {
 
 		private int toolNameIndex = 0;
 
-		private String[] toolPrefix = {
-				"", "Ancient", "Blazing", "Blessed", "Cursed", "Bleeding", "Shiny", "Gloomy", "Bright", "Dark", "Hallow", "Hollow",
+		private final String[] toolPrefix = {
+				"", "Ancient", "Blazing", "Blessed", "Cursed", "Bleeding", "Shiny", "Gloomy", "Bright", "Dark", "Hallowed", "Hollow",
 				"Broken", "Brittle", "Tough", "Glowing", "Magic", "Enchanted", "Freezing"
 		};
-		private String[] toolMaterials = {
+		private final String[] toolMaterials = {
 				"Ruby", "Emerald", "Sapphire", "Quartz", "Obsidian", "Amethyst",
-				"Amber", "Bone", "Necrotic Bone", "Slime", "Quicksilver",
-				"Tin", "Nickle", "Bronze", "Copper", "Steel", "Lead", "Silver", "Aluminium",
+				"Amber", "Bone", "Necrotic Bone", "Slime", "Quicksilver", "Damascus",
+				"Tin", "Zinc", "Nickle", "Bronze", "Copper", "Steel", "Lead", "Silver", "Aluminium",
 				"Pig Iron", "Rose Gold", "Electrum", "Manyullyn",
-				"Cobalt", "Titanium", "Osmium", "Platinum", "Tungsten", "Palladium"
+				"Cobalt", "Titanium", "Osmium", "Platinum", "Tungsten", "Palladium",
+				"Ironwood", "Bamboo"
 		};
-		private String[] toolTypes = {
-				"Needle", "Shears", "Scissors", "Knife",
+		private final String[] toolTypes = {
+				"Ingot", "Nugget", "Rod",
+				"Needle", "Shears", "Fishing Rod", "Knife",
 				"Pickaxe", "Shovel", "Hoe", "Axe", "Hammer", "Paxel", "Scythe", "Kama", "Mattock", "Pickdaze",
 				"Excavator", "Sledge Hammer", "Vein Hammer", "Broad Axe",
-				"Bow", "Crossbow", "Gun", "Rifle", "Cannon", "Longbow",
-				"Cleaver", "War Pick",
-				"Sword", "Broadsword", "Longsword", "Dagger", "Rapier", "Spear", "Javelin", "Claws"
+				"Bow", "Crossbow", "Pistol", "Rifle", "Cannon", "Longbow",
+				"War Pick", "Claws",
+				"Sword", "Broadsword", "Longsword", "Rapier", "Dagger", "Cleaver", "Katana", "Saber",
+				"Spear", "Javelin", "Trident", "Halberd", "Pike", "Lance",
+				"Helmet", "Chestplate", "Leggings", "Boots", "Chainmail", "Shield"
 		};
 
 		public static List<String> readAllNonEmptyLines(String resourcePath) {

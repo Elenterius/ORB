@@ -2,6 +2,7 @@ package com.github.elenterius.orb.core;
 
 import com.github.elenterius.orb.ORBMod;
 import com.github.elenterius.orb.dev.DevEnvironment;
+import net.minecraft.world.level.storage.LevelResource;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;

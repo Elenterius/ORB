@@ -1,4 +1,4 @@
-package com.github.elenterius.orb.mixin;
+package com.github.elenterius.orb.mixin.client;
 
 import net.minecraft.client.searchtree.FullTextSearchTree;
 import org.spongepowered.asm.mixin.Mixin;
