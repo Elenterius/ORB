@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class SearchTreeUpdater {
 
-	public static final Marker LOG_MARKER = MarkerFactory.getMarker("SearchTreeUpdater");
+	public static final Marker UPDATE_MARKER = MarkerFactory.getMarker("SearchTreeUpdater");
+	public static final Marker SEARCH_MARKER = MarkerFactory.getMarker("SearchTree");
 
 	private final Map<SearchRegistry.TreeEntry<?>, String> treeNames = new HashMap<>();
 
@@ -91,7 +92,7 @@ public final class SearchTreeUpdater {
 	}
 
 	public void shutdown() {
-		ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "Shutting down...");
+		ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Shutting down...");
 		executor.shutdown();
 		executor.shutdownNow();
 	}
@@ -118,7 +119,7 @@ public final class SearchTreeUpdater {
 			treeEntry.ORB$AtomicTree().set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 		}
 	}
 
@@ -133,7 +134,7 @@ public final class SearchTreeUpdater {
 			reference.set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 		}
 	}
 

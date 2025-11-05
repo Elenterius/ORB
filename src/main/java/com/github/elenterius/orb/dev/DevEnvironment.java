@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 public final class DevEnvironment {
 
-	public static final int NUMBER_OF_ITEMS = 15_000;
+	public static final int NUMBER_OF_ITEMS = 50_000;
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, ORBMod.MOD_ID);
 
 	private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, ORBMod.MOD_ID);
