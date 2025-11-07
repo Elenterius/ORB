@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.mixin;
 
-import com.github.elenterius.orb.core.RecipeBookManager;
+import com.github.elenterius.orb.core.ServerRecipeBookManager;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,12 +22,12 @@ public abstract class PlayerListMixin {
 
 	@Inject(method = "save", at = @At("TAIL"))
 	private void onSavePlayer(ServerPlayer player, CallbackInfo ci) {
-		RecipeBookManager.saveRecipeBook(server, player);
+		ServerRecipeBookManager.saveRecipeBook(server, player);
 	}
 
 	@Inject(method = "load", at = @At("TAIL"))
 	private void onLoadPlayer(ServerPlayer player, CallbackInfoReturnable<CompoundTag> cir) {
-		RecipeBookManager.loadRecipeBook(server, player);
+		ServerRecipeBookManager.loadRecipeBook(server, player);
 	}
 
 }

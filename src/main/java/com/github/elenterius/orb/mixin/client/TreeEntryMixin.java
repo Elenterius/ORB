@@ -55,28 +55,4 @@ public abstract class TreeEntryMixin<T> implements SearchTreeUpdater.TreeEntryEx
 		ci.cancel();
 	}
 
-	//	@Inject(method = "populate", at = @At(value = "HEAD"))
-	//	private void onPrePopulate(CallbackInfo ci, @Share("startTime") LocalLongRef argRef) {
-	//		ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "(Re-)Building SearchTreeEntry...");
-	//		argRef.set(System.nanoTime());
-	//	}
-	//
-	//	@Inject(method = "populate", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/searchtree/RefreshableSearchTree;refresh()V"))
-	//	private void onPosPopulate(CallbackInfo ci, @Share("startTime") LocalLongRef argRef) {
-	//		long elapsedNanos = System.nanoTime() - argRef.get();
-	//		ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "SearchTreeEntry (re-)build took: {}", Duration.ofNanos(elapsedNanos));
-	//	}
-	//
-	//	@Inject(method = "refresh", at = @At(value = "HEAD"))
-	//	private void onPreRefresh(CallbackInfo ci, @Share("startTime") LocalLongRef argRef) {
-	//		ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "ResourceManagerReloaded has reloaded. Refreshing SearchTreeEntry...");
-	//		argRef.set(System.nanoTime());
-	//	}
-	//
-	//	@Inject(method = "refresh", at = @At(value = "TAIL"))
-	//	private void onPostRefresh(CallbackInfo ci, @Share("startTime") LocalLongRef argRef) {
-	//		long elapsedNanos = System.nanoTime() - argRef.get();
-	//		ORBMod.LOGGER.info(SearchTreeUpdater.LOG_MARKER, "SearchTreeEntry Refresh took: {}", Duration.ofNanos(elapsedNanos));
-	//	}
-
 }

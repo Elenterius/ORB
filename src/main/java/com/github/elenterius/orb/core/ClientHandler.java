@@ -14,6 +14,8 @@ public class ClientHandler {
 
 	private static final SearchTreeUpdater SEARCH_TREE_UPDATER = new SearchTreeUpdater();
 
+	private ClientHandler() {}
+
 	@SubscribeEvent
 	public static void onClientSetup(final FMLClientSetupEvent event) {
 		// unnecessary

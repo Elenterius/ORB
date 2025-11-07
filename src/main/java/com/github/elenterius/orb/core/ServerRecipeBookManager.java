@@ -8,7 +8,6 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
-import net.minecraftforge.fml.loading.LogMarkers;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -16,10 +15,12 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 
-public class RecipeBookManager {
+public final class ServerRecipeBookManager {
 
-	public static final Marker LOG_MARKER = MarkerFactory.getMarker("RecipeBookManager");
+	public static final Marker LOG_MARKER = MarkerFactory.getMarker("ServerRecipeBookManager");
 	public static final LevelResource DATA_DIR = new LevelResource("recipe_books");
+
+	private ServerRecipeBookManager() {}
 
 	public static void saveRecipeBook(MinecraftServer server, ServerPlayer player) {
 		long startTime = System.nanoTime();

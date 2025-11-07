@@ -7,9 +7,9 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "mixins": [ "NonNullListMixin", "PlayerListMixin", "ServerPlayerMixin" ],
+  "mixins": [ "MinecraftServerMixin", "NonNullListMixin", "PlayerListMixin", "RecipeCommandMixin", "ServerPlayerMixin", "ServerRecipeBookMixin" ],
   "client": [
-    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
+    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
   ],
   "server": [ ]
 }

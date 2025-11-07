@@ -18,7 +18,6 @@ public class ORBMod {
     }
 
 	public static ResourceLocation rl(String path) {
-		//noinspection removal
 		return new ResourceLocation(MOD_ID, path);
     }
 

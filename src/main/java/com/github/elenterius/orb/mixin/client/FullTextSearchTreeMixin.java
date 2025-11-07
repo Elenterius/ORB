@@ -14,7 +14,7 @@ import java.util.List;
 public abstract class FullTextSearchTreeMixin<T> {
 
 	@WrapMethod(method = "searchPlainText")
-	private List<T> onSearchPlainText(String query, Operation<List<T>> original) {
+	private List<T> measureSearchPlainText(String query, Operation<List<T>> original) {
 		long startTime = System.nanoTime();
 
 		List<T> result = original.call(query);
@@ -26,7 +26,7 @@ public abstract class FullTextSearchTreeMixin<T> {
 	}
 
 	@WrapMethod(method = "searchResourceLocation")
-	private List<T> onSearchResourceLocation(String namespace, String path, Operation<List<T>> original) {
+	private List<T> measureSearchResourceLocation(String namespace, String path, Operation<List<T>> original) {
 		long startTime = System.nanoTime();
 
 		List<T> result = original.call(namespace, path);
