@@ -4,6 +4,7 @@ import net.minecraft.core.NonNullList;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -26,10 +27,27 @@ public abstract class NonNullListMixin<E> {
 
 	@Inject(method = "clear", at = @At(value = "HEAD"), cancellable = true)
 	private void onClear(CallbackInfo ci) {
-		//this makes clearing of mutable NonNullList significantly faster (can be up to 99% faster for 50K+ elements in Creative Search Menu)
-		if (defaultValue == null && list instanceof ArrayList<?>) {
+		if (defaultValue == null && ORB$fastClear(list)) {
+			ci.cancel(); //cancel expensive clear operation
+		}
+	}
+
+	/**
+	 * This makes clearing of mutable NonNullList significantly faster for many elements in Creative Search Menu
+	 */
+	@Unique
+	private static boolean ORB$fastClear(List<?> list) {
+		if (list instanceof ArrayList<?>) {
+			list.clear(); // up to 99% faster
+			return true;
+		}
+
+		try {
 			list.clear();
-			ci.cancel();
+			return true;
+		}
+		catch (UnsupportedOperationException ignored) {
+			return false;
 		}
 	}
 
