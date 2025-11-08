@@ -7,9 +7,7 @@
   "injectors": {
     "defaultRequire": 1
   },
-  "mixins": [ "MinecraftServerMixin", "NonNullListMixin", "PlayerListMixin", "RecipeCommandMixin", "ServerPlayerMixin", "ServerRecipeBookMixin" ],
-  "client": [
-    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
-  ],
+  "mixins": [ "MinecraftServerMixin", "NonNullListMixin", "PlayerListMixin", "RecipeCommandMixin", "ServerPlayerMixin", "ServerRecipeBookMixin", "StackedContentsAccessor", "client.RecipeBookAccessor" ],
+  "client": [ "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentAccessor", "client.RecipeBookComponentMixin", "client.RecipeCollectionAccessor", "client.RecipeCollectionMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin" ],
   "server": [ ]
 }

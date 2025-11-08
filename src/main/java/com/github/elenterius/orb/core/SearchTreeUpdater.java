@@ -119,7 +119,7 @@ public final class SearchTreeUpdater {
 			treeEntry.ORB$AtomicTree().set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 		}
 	}
 
@@ -134,7 +134,7 @@ public final class SearchTreeUpdater {
 			reference.set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 		}
 	}
 
