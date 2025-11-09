@@ -10,6 +10,7 @@ Project ORB (Optimized Recipe Book) aims to improve the performance of the recip
 - defer slow search index rebuild/refresh to a separate thread
 - improve performance of Creative Search Menu
 - improve performance of Recipe Book Menu
+	- show progress bar when the search index isn't ready yet
 - isolate recipe book data from player data
 	- recipe book data is now serialized to/from a dedicated folder called `recipe_book`
 	- player nbt data (`/data get entity Dev`) will no longer contain recipe book data

@@ -16,7 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 
 public final class SearchTreeUpdater {
 
@@ -24,6 +27,7 @@ public final class SearchTreeUpdater {
 	public static final Marker SEARCH_MARKER = MarkerFactory.getMarker("SearchTree");
 
 	private final Map<SearchRegistry.TreeEntry<?>, String> treeNames = new HashMap<>();
+	private final Map<SearchRegistry.TreeEntry<?>, SearchRegistry.Key<?>> treeKeys = new HashMap<>();
 
 	private final ExecutorService executor = Executors.newSingleThreadExecutor(target -> {
 		Thread thread = new Thread(target, "SearchTreeUpdater");
@@ -31,9 +35,11 @@ public final class SearchTreeUpdater {
 		return thread;
 	});
 
+	private final Map<SearchRegistry.Key<?>, AtomicInteger> progressTrackers = new HashMap<>();
+
 	public SearchTreeUpdater() {}
 
-	private void populateTreeNameMap() {
+	private void populateTreeMaps() {
 		if (!treeNames.isEmpty()) return;
 
 		Map<CreativeModeTab, SearchRegistry.Key<ItemStack>> nameSearchKeys = CreativeModeTabSearchRegistry.getNameSearchKeys();
@@ -44,6 +50,8 @@ public final class SearchTreeUpdater {
 			for (Map.Entry<SearchRegistry.Key<?>, SearchRegistry.TreeEntry<?>> entry : searchTrees.entrySet()) {
 				SearchRegistry.Key<?> key = entry.getKey();
 				SearchRegistry.TreeEntry<?> tree = entry.getValue();
+
+				treeKeys.put(tree, key);
 
 				if (key == SearchRegistry.CREATIVE_NAMES) {
 					treeNames.putIfAbsent(tree, "Creative Names");
@@ -72,23 +80,38 @@ public final class SearchTreeUpdater {
 		}
 	}
 
-	private <T> String getTreeName(SearchRegistry.TreeEntry<T> treeEntry) {
-		populateTreeNameMap();
+	public <T> String getName(SearchRegistry.TreeEntry<T> treeEntry) {
+		populateTreeMaps();
 		return treeNames.getOrDefault(treeEntry, "Unknown");
 	}
 
+	public <T> SearchRegistry.Key<?> getKey(SearchRegistry.TreeEntry<T> treeEntry) {
+		return treeKeys.get(treeEntry);
+	}
+
 	public <T> void submitRebuild(SearchRegistry.TreeEntry<T> treeEntry, List<T> values) {
-		String keyName = getTreeName(treeEntry);
+		String treeName = getName(treeEntry);
+		SearchRegistry.Key<?> key = getKey(treeEntry);
+
+		AtomicInteger progressTracker = progressTrackers.computeIfAbsent(key, k -> new AtomicInteger(100));
 
 		//noinspection unchecked
-		executor.submit(new RebuildRequest<>(keyName, (TreeEntryExtension<T>) treeEntry, values));
+		executor.submit(new RebuildRequest<>(treeName, (TreeEntryExtension<T>) treeEntry, values, progressTracker::set));
 	}
 
 	public <T> void submitRefresh(SearchRegistry.TreeEntry<T> treeEntry) {
-		String keyName = getTreeName(treeEntry);
+		String treeName = getName(treeEntry);
+		SearchRegistry.Key<?> key = getKey(treeEntry);
+
+		AtomicInteger progressTracker = progressTrackers.computeIfAbsent(key, k -> new AtomicInteger(100));
 
 		//noinspection unchecked
-		executor.submit(new RefreshRequest<>(keyName, (TreeEntryExtension<T>) treeEntry));
+		executor.submit(new RefreshRequest<>(treeName, (TreeEntryExtension<T>) treeEntry, progressTracker::set));
+	}
+
+	public IntSupplier getProgressTacker(SearchRegistry.Key<?> key) {
+		AtomicInteger progressTracker = progressTrackers.computeIfAbsent(key, k -> new AtomicInteger(100));
+		return progressTracker::get;
 	}
 
 	public void shutdown() {
@@ -109,23 +132,30 @@ public final class SearchTreeUpdater {
 
 	}
 
-	private record RebuildRequest<T>(String treeName, TreeEntryExtension<T> treeEntry, List<T> values) implements Runnable {
+	private record RebuildRequest<T>(String treeName, TreeEntryExtension<T> treeEntry, List<T> values, IntConsumer progressConsumer) implements Runnable {
 		@Override
 		public void run() {
+			progressConsumer.accept(0);
+
 			long startTime = System.nanoTime();
 
 			RefreshableSearchTree<T> tree = treeEntry.ORB$getTreeFactory().apply(values);
+			progressConsumer.accept(50);
 			tree.refresh();
 			treeEntry.ORB$AtomicTree().set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
 			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+
+			progressConsumer.accept(100);
 		}
 	}
 
-	private record RefreshRequest<T>(String treeName, TreeEntryExtension<T> treeEntry) implements Runnable {
+	private record RefreshRequest<T>(String treeName, TreeEntryExtension<T> treeEntry, IntConsumer progressConsumer) implements Runnable {
 		@Override
 		public void run() {
+			progressConsumer.accept(0);
+
 			long startTime = System.nanoTime();
 
 			AtomicReference<RefreshableSearchTree<T>> reference = treeEntry.ORB$AtomicTree();
@@ -135,6 +165,8 @@ public final class SearchTreeUpdater {
 
 			long elapsedNanos = System.nanoTime() - startTime;
 			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+
+			progressConsumer.accept(100);
 		}
 	}
 

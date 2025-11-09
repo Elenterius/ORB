@@ -45,13 +45,13 @@ public abstract class TreeEntryMixin<T> implements SearchTreeUpdater.TreeEntryEx
 
 	@Inject(method = "populate", at = @At(value = "HEAD"), cancellable = true)
 	private void onPopulate(List<T> values, CallbackInfo ci) {
-		ClientHandler.startSearchTreeRebuild(ORB$self(), values);
+		ClientHandler.asyncCreateSearchTree(ORB$self(), values);
 		ci.cancel();
 	}
 
 	@Inject(method = "refresh", at = @At(value = "HEAD"), cancellable = true)
 	private void onRefresh(CallbackInfo ci) {
-		ClientHandler.startSearchTreeRefresh(ORB$self());
+		ClientHandler.asyncRefreshSearchTree(ORB$self());
 		ci.cancel();
 	}
 

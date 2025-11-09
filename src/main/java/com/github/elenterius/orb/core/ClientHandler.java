@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 import java.util.List;
+import java.util.function.IntSupplier;
 
 @Mod.EventBusSubscriber(modid = ORBMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientHandler {
@@ -26,12 +27,16 @@ public class ClientHandler {
 		Runtime.getRuntime().addShutdownHook(new Thread(RECIPE_BOOK_PAGE_UPDATER::shutdown));
 	}
 
-	public static <T> void startSearchTreeRebuild(SearchRegistry.TreeEntry<T> treeEntry, List<T> values) {
+	public static <T> void asyncCreateSearchTree(SearchRegistry.TreeEntry<T> treeEntry, List<T> values) {
 		SEARCH_TREE_UPDATER.submitRebuild(treeEntry, values);
 	}
 
-	public static <T> void startSearchTreeRefresh(SearchRegistry.TreeEntry<T> treeEntry) {
+	public static <T> void asyncRefreshSearchTree(SearchRegistry.TreeEntry<T> treeEntry) {
 		SEARCH_TREE_UPDATER.submitRefresh(treeEntry);
+	}
+
+	public static IntSupplier getIndexingProgress(SearchRegistry.Key<?> key) {
+		return SEARCH_TREE_UPDATER.getProgressTacker(key);
 	}
 
 	public static void asyncUpdateRecipeBookPage(RecipeBookComponent recipeBookComponent, boolean resetPageNumber, boolean updateTabs) {
