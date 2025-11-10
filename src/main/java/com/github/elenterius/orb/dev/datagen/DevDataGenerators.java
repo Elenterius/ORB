@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.dev.datagen;
 
-import com.github.elenterius.orb.ORBMod;
+import com.github.elenterius.orb.core.Orb;
 import com.github.elenterius.orb.dev.DevEnvironment;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
@@ -19,7 +19,7 @@ import org.apache.commons.numbers.combinatorics.Combinations;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-@Mod.EventBusSubscriber(modid = ORBMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = Orb.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class DevDataGenerators {
 
 	private DevDataGenerators() {

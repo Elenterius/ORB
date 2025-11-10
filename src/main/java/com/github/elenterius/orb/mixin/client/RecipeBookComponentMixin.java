@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.mixin.client;
 
-import com.github.elenterius.orb.core.ClientHandler;
+import com.github.elenterius.orb.core.OrbClient;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -25,13 +25,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.function.IntSupplier;
-import java.util.stream.Stream;
 
 @Mixin(RecipeBookComponent.class)
 public abstract class RecipeBookComponentMixin {
 
 	@Unique
-	private static final long ORB$DEBOUNCE_DELAY_MS = 200;
+	private static final int CONTAINER_WIDTH = 25 * 5;
+	@Unique
+	private static final int CONTAINER_HEIGHT = 25 * 4;
+
+	@Unique
+	private float time = (float) Math.random();
+
+	@Unique
+	private final IntSupplier indexingProgress = OrbClient.getIndexingProgress(SearchRegistry.RECIPE_COLLECTIONS);
 
 	@Unique
 	private long ORB$LastTime = 0;
@@ -53,12 +60,26 @@ public abstract class RecipeBookComponentMixin {
 	@Nullable
 	private EditBox searchBox;
 
+	@WrapOperation(method = "initVisuals", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;updateCollections(Z)V"))
+	private void onInitVisuals(RecipeBookComponent instance, boolean resetPageNumber, Operation<Void> original) {
+		// update with empty placeholder collections to prevent NPE and Divide By Zero errors with recipe page buttons
+		recipeBookPage.updateCollections(List.of(), resetPageNumber);
+
+		OrbClient.asyncUpdateRecipeBookPage(ORB$self(), resetPageNumber, true);
+		//important: we need to make sure to update the tabs as well otherwise there won't be any tabs visible
+	}
+
+	@WrapMethod(method = "updateCollections")
+	private void onUpdateCollections(boolean resetPageNumber, Operation<Void> original) {
+		OrbClient.asyncUpdateRecipeBookPage(ORB$self(), resetPageNumber, false);
+	}
+
 	@WrapMethod(method = "checkSearchStringUpdate")
 	private void onSearchStringUpdate(Operation<Void> original) {
 		long elapsedTime = System.currentTimeMillis() - ORB$LastTime;
 
 		//debounce to mitigate excessive updating of the recipe pages
-		if (elapsedTime >= ORB$DEBOUNCE_DELAY_MS) {
+		if (elapsedTime >= OrbClient.DEBOUNCE_DELAY_MS) {
 			original.call();
 			ORB$IsSearchUpdateDebounced = false;
 			ORB$LastTime = System.currentTimeMillis();
@@ -77,55 +98,6 @@ public abstract class RecipeBookComponentMixin {
 			ORB$LastTime = System.currentTimeMillis();
 		}
 	}
-
-	@WrapOperation(method = "initVisuals", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;updateCollections(Z)V"))
-	private void onInitVisuals(RecipeBookComponent instance, boolean resetPageNumber, Operation<Void> original) {
-		// update with empty placeholder collections to prevent NPE and Divide By Zero errors with recipe page buttons
-		recipeBookPage.updateCollections(List.of(), resetPageNumber);
-
-		ClientHandler.asyncUpdateRecipeBookPage(ORB$self(), resetPageNumber, true);
-		//important: we need to make sure to update the tabs as well otherwise there won't be any tabs visible
-	}
-
-	@WrapMethod(method = "updateCollections")
-	private void onUpdateCollections(boolean resetPageNumber, Operation<Void> original) {
-		ClientHandler.asyncUpdateRecipeBookPage(ORB$self(), resetPageNumber, false);
-	}
-
-	@Unique
-	private RecipeBookComponent ORB$self() {
-		return (RecipeBookComponent) (Object) this;
-	}
-
-	//	@Unique
-	//	private static final ResourceLocation TEXTURE = ORBMod.rl("textures/gui/recipe_book_overlay.png");
-	//		guiGraphics.blit(TEXTURE, x + 11, y + 31, 0, 0, TEXTURE_U_WIDTH, TEXTURE_V_HEIGHT, 128, 128);
-
-	@Unique
-	private static final int CONTAINER_WIDTH = 25 * 5;
-	@Unique
-	private static final int CONTAINER_HEIGHT = 25 * 4;
-
-	@Unique
-	private static final Component[] LOADING_MESSAGES = Stream.of(
-			"Recalibrating crafting grids for symmetry",
-			"Cross-checking recipe costs with villager trade inflation",
-			"Teaching Sniffers to sort recipes by smell",
-			"Trying to locate the meaning of crafting",
-			"Synchronizing recipe data with villager gossip",
-			"Finalizing crafting topology... almost table",
-			"Verifying that crafting tables are still made of wood",
-			"Debugging villagers who think emeralds are food",
-			"Verifying that all bread is legally bread and not toast",
-			"Updating indexes for user happiness",
-			"Counting crafting tables. There are too many."
-	).map(Component::literal).toArray(Component[]::new);
-
-	@Unique
-	private float time = (float) Math.random();
-
-	@Unique
-	private final IntSupplier indexingProgress = ClientHandler.getIndexingProgress(SearchRegistry.RECIPE_COLLECTIONS);
 
 	@WrapOperation(method = "mouseClicked", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;mouseClicked(DDIIIII)Z"))
 	private boolean onMouseClicked(RecipeBookPage instance, double mouseX, double mouseY, int button, int x, int y, int width, int height, Operation<Boolean> original) {
@@ -149,9 +121,10 @@ public abstract class RecipeBookComponentMixin {
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;render(Lnet/minecraft/client/gui/GuiGraphics;IIIIF)V"))
 	private void onRender(RecipeBookPage instance, GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		boolean hasQuery = searchBox != null && !searchBox.getValue().isEmpty();
+		//		boolean hasQuery = searchBox != null && !searchBox.getValue().isEmpty();
 
-		if (!hasQuery || indexingProgress.getAsInt() >= 100) {
+		//		if (!hasQuery || indexingProgress.getAsInt() >= 100) {
+		if (indexingProgress.getAsInt() >= 100) {
 			original.call(instance, guiGraphics, x, y, mouseX, mouseY, partialTick);
 			return;
 		}
@@ -159,10 +132,12 @@ public abstract class RecipeBookComponentMixin {
 		int x1 = x + 11 + CONTAINER_WIDTH / 2;
 		int y1 = y + 31 + CONTAINER_HEIGHT / 2;
 
+		//guiGraphics.blit(TEXTURE, x1, y1 - minecraft.font.lineHeight / 2 - TEXTURE_V_HEIGHT, 0, 0, TEXTURE_U_WIDTH, TEXTURE_V_HEIGHT, 128, 128);
+
 		guiGraphics.drawCenteredString(minecraft.font, "Updating Search Index", x1, y1 - minecraft.font.lineHeight / 2, 0xFF_FAFAFA);
 
 		time += partialTick;
-		Component message = LOADING_MESSAGES[Mth.floor(time / 25f) % LOADING_MESSAGES.length];
+		Component message = OrbClient.LOADING_MESSAGES[Mth.floor(time / 25f) % OrbClient.LOADING_MESSAGES.length];
 		List<FormattedText> lines = minecraft.font.getSplitter().splitLines(message, CONTAINER_WIDTH, Style.EMPTY);
 		int y2 = y1 + 2 + minecraft.font.lineHeight / 2;
 
@@ -170,6 +145,11 @@ public abstract class RecipeBookComponentMixin {
 			FormattedText line = lines.get(j);
 			guiGraphics.drawWordWrap(minecraft.font, line, x + 11, y2 + j * (2 + minecraft.font.lineHeight), CONTAINER_WIDTH, 0xFF_9F9F9F);
 		}
+	}
+
+	@Unique
+	private RecipeBookComponent ORB$self() {
+		return (RecipeBookComponent) (Object) this;
 	}
 
 }

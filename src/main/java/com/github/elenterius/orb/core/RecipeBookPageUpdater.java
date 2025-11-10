@@ -1,6 +1,5 @@
 package com.github.elenterius.orb.core;
 
-import com.github.elenterius.orb.ORBMod;
 import com.github.elenterius.orb.mixin.StackedContentsAccessor;
 import com.github.elenterius.orb.mixin.client.RecipeBookAccessor;
 import com.github.elenterius.orb.mixin.client.RecipeBookComponentAccessor;
@@ -46,11 +45,16 @@ public final class RecipeBookPageUpdater {
 
 		CompletableFuture
 				.supplyAsync(UpdateRequest.of(recipeBookComponent), executor)
-				.thenAccept(updates -> {
+				.handle((updates, throwable) -> {
+					if (throwable != null) {
+						Orb.LOGGER.error(LOG_MARKER, "Failed to asynchronously update of recipe collections for page {}", updateCategory.name(), throwable);
+						return null;
+					}
+
 					RecipeBookComponent ref = weakReference.get();
 					if (ref == null) {
-						ORBMod.LOGGER.warn(LOG_MARKER, "Discarding update: the recipe page is no longer available");
-						return;
+						Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the recipe page is no longer available");
+						return null;
 					}
 					RecipeBookComponentAccessor accessor = (RecipeBookComponentAccessor) ref;
 
@@ -58,8 +62,8 @@ public final class RecipeBookPageUpdater {
 
 					RecipeBookCategories currentCategory = accessor.getSelectedTab().getCategory();
 					if (currentCategory != updateCategory) {
-						ORBMod.LOGGER.warn(LOG_MARKER, "Discarding update: the current page category is different");
-						return;
+						Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the current page category is different");
+						return null;
 					}
 
 					ClientRecipeBook recipeBook = accessor.getBook();
@@ -67,25 +71,12 @@ public final class RecipeBookPageUpdater {
 
 					validCollections.removeIf(collection -> !updates.containsKey(collection));
 
-					int counter = 0;
-
 					for (RecipeCollection collection : validCollections) {
 						RecipeCollectionUpdate update = updates.get(collection);
 						RecipeCollectionAccessor collectionAccessor = (RecipeCollectionAccessor) collection;
 						collectionAccessor.setFitsDimensions(update.fitsDimensions);
 						collectionAccessor.setCraftable(update.craftable);
-						counter++;
 					}
-
-					//					for (Map.Entry<RecipeCollection, RecipeCollectionUpdate> entry : updates.entrySet()) {
-					//						RecipeCollection key = entry.getKey();
-					//						if (valid.contains(key) && key instanceof RecipeCollectionAccessor collection) {
-					//							RecipeCollectionUpdate update = entry.getValue();
-					//							collection.setFitsDimensions(update.fitsDimensions);
-					//							collection.setCraftable(update.craftable);
-					//							counter++;
-					//						}
-					//					}
 
 					validCollections.removeIf(collection -> !collection.hasKnownRecipes());
 					validCollections.removeIf(collection -> !collection.hasFitting());
@@ -101,17 +92,32 @@ public final class RecipeBookPageUpdater {
 					}
 
 					Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-					ORBMod.LOGGER.debug(LOG_MARKER, "Updated {} recipe entries which took {}", counter, duration);
+					Orb.LOGGER.debug(LOG_MARKER, "Updated {} recipe entries which took {}", validCollections.size(), duration);
+					return updates;
+				})
+				.exceptionally(throwable -> {
+					Orb.LOGGER.error(LOG_MARKER, "Failed to apply update to recipe page {}", updateCategory.name(), throwable);
+					return null;
 				});
 	}
 
 	public void shutdown() {
-		ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Shutting down...");
+		Orb.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Shutting down...");
 		executor.shutdown();
 		executor.shutdownNow();
 	}
 
-	public record RecipeCollectionUpdate(Set<Recipe<?>> fitsDimensions, Set<Recipe<?>> craftable) {}
+	/**
+	 * @param fitsDimensions needs to be mutable
+	 * @param craftable      needs to be mutable
+	 */
+	public record RecipeCollectionUpdate(HashSet<Recipe<?>> fitsDimensions, HashSet<Recipe<?>> craftable) {}
+
+	public static class RecipeBookUpdateException extends RuntimeException {
+		public RecipeBookUpdateException(String message) {
+			super(message);
+		}
+	}
 
 	private record UpdateRequest(String query, List<RecipeCollection> collections, Set<ResourceLocation> knownRecipes, StackedContents stackedContents, int gridWidth,
 	                             int gridHeight) implements Supplier<Map<RecipeCollection, RecipeCollectionUpdate>> {
@@ -143,14 +149,8 @@ public final class RecipeBookPageUpdater {
 			long startTime = System.nanoTime();
 			Minecraft client = Minecraft.getInstance();
 
-			if (client.level == null) {
-				ORBMod.LOGGER.warn(LOG_MARKER, "Skipped update of recipe collections because no level exists");
-				return Map.of();
-			}
-			if (client.player == null) {
-				ORBMod.LOGGER.warn(LOG_MARKER, "Skipped update of recipe collections because no player exists");
-				return Map.of();
-			}
+			if (client.level == null) throw new RecipeBookUpdateException("Level does not exists");
+			if (client.player == null) throw new RecipeBookUpdateException("Player does not exists");
 
 			//remove all collections that don't contain any matching recipes
 			if (!query.isEmpty()) {
@@ -167,23 +167,23 @@ public final class RecipeBookPageUpdater {
 			//if the recipes change due to datapack reload the game will replace the recipe collections in the recipe book
 			//that means in the worst case the recipe collections we are working with become outdated and the result of this work will be ignored
 			for (RecipeCollection collection : collections) {
-				Set<Recipe<?>> fitsDimensions = collection.getRecipes().stream()
+				HashSet<Recipe<?>> fitsDimensions = collection.getRecipes().stream()
 						.map(Recipe::getId)
 						.filter(knownRecipes::contains)
 						.map(recipeManager::byKey)
 						.flatMap(Optional::stream)
 						.filter(recipe -> recipe.canCraftInDimensions(gridWidth, gridHeight))
-						.collect(Collectors.toSet());
+						.collect(Collectors.toCollection(HashSet::new));
 
-				Set<Recipe<?>> craftable = fitsDimensions.stream()
+				HashSet<Recipe<?>> craftable = fitsDimensions.stream()
 						.filter(recipe -> stackedContents.canCraft(recipe, null)) //do expensive method call
-						.collect(Collectors.toSet());
+						.collect(Collectors.toCollection(HashSet::new));
 
 				updates.put(collection, new RecipeCollectionUpdate(fitsDimensions, craftable));
 			}
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.debug(LOG_MARKER, "Deferred update of recipe collections took {}", Duration.ofNanos(elapsedNanos));
+			Orb.LOGGER.debug(LOG_MARKER, "Async update of recipe collections took {}", Duration.ofNanos(elapsedNanos));
 
 			return updates;
 		}

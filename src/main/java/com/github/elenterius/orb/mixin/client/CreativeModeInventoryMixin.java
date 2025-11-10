@@ -13,7 +13,7 @@ public abstract class CreativeModeInventoryMixin {
 	//		original.call(instance);
 	//
 	//		Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-	//		ORBMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Clearing item list took {}", duration);
+	//		NeoForgeOrbMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Clearing item list took {}", duration);
 	//	}
 
 	//	@WrapOperation(method = "refreshSearchResults", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/NonNullList;addAll(Ljava/util/Collection;)Z"))
@@ -23,7 +23,7 @@ public abstract class CreativeModeInventoryMixin {
 	//		original.call(instance, collection);
 	//
 	//		Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-	//		ORBMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Adding items to list took {}", duration);
+	//		NeoForgeOrbMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Adding items to list took {}", duration);
 	//		return false;
 	//	}
 

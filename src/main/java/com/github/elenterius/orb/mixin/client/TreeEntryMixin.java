@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.mixin.client;
 
-import com.github.elenterius.orb.core.ClientHandler;
+import com.github.elenterius.orb.core.OrbClient;
 import com.github.elenterius.orb.core.SearchTreeUpdater;
 import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.client.searchtree.SearchRegistry;
@@ -45,13 +45,13 @@ public abstract class TreeEntryMixin<T> implements SearchTreeUpdater.TreeEntryEx
 
 	@Inject(method = "populate", at = @At(value = "HEAD"), cancellable = true)
 	private void onPopulate(List<T> values, CallbackInfo ci) {
-		ClientHandler.asyncCreateSearchTree(ORB$self(), values);
+		OrbClient.asyncCreateSearchTree(ORB$self(), values);
 		ci.cancel();
 	}
 
 	@Inject(method = "refresh", at = @At(value = "HEAD"), cancellable = true)
 	private void onRefresh(CallbackInfo ci) {
-		ClientHandler.asyncRefreshSearchTree(ORB$self());
+		OrbClient.asyncRefreshSearchTree(ORB$self());
 		ci.cancel();
 	}
 

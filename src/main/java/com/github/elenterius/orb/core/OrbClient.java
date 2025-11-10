@@ -1,26 +1,39 @@
 package com.github.elenterius.orb.core;
 
-import com.github.elenterius.orb.ORBMod;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.searchtree.SearchRegistry;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.IntSupplier;
+import java.util.stream.Stream;
 
-@Mod.EventBusSubscriber(modid = ORBMod.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-public class ClientHandler {
+public class OrbClient {
 
 	private static final SearchTreeUpdater SEARCH_TREE_UPDATER = new SearchTreeUpdater();
 	private static final RecipeBookPageUpdater RECIPE_BOOK_PAGE_UPDATER = new RecipeBookPageUpdater();
 
-	private ClientHandler() {}
+	public static final long DEBOUNCE_DELAY_MS = 200;
 
-	@SubscribeEvent
-	public static void onClientSetup(final FMLClientSetupEvent event) {
+	//public static final ResourceLocation LOADING_TEXTURE = NeoForgeOrbMod.rl("textures/gui/loading.png");
+
+	public static final Component[] LOADING_MESSAGES = Stream.of(
+			"Recalibrating crafting grids for symmetry",
+			"Cross-checking recipe costs with villager trade inflation",
+			"Teaching Sniffers to sort recipes by smell",
+			"Trying to locate the meaning of crafting",
+			"Synchronizing recipe data with villager gossip",
+			"Finalizing crafting topology... almost table",
+			"Verifying that crafting tables are still made of wood",
+			"Debugging villagers who think emeralds are food",
+			"Verifying that all bread is legally bread and not toast",
+			"Updating indexes for user happiness",
+			"Counting crafting tables. There are too many."
+	).map(Component::literal).toArray(Component[]::new);
+
+	private OrbClient() {}
+
+	public static void registerShutdownHooks() {
 		// unnecessary as the JVM should terminate, this is just for the sake of sanity
 		// note: shutdown hooks only work on the client side
 		Runtime.getRuntime().addShutdownHook(new Thread(SEARCH_TREE_UPDATER::shutdown));

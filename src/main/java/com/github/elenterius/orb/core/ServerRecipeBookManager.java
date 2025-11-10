@@ -1,6 +1,5 @@
 package com.github.elenterius.orb.core;
 
-import com.github.elenterius.orb.ORBMod;
 import net.minecraft.FileUtil;
 import net.minecraft.Util;
 import net.minecraft.nbt.CompoundTag;
@@ -40,10 +39,10 @@ public final class ServerRecipeBookManager {
 			Util.safeReplaceFile(newFile, tempFile.toPath(), backupFile);
 
 			Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-			ORBMod.LOGGER.debug(LOG_MARKER, "Saving recipe book data for Player{name={}, uuid={}} took {}", player.getName().getString(), playerUUID, duration);
+			Orb.LOGGER.debug(LOG_MARKER, "Saving recipe book data for Player{name={}, uuid={}} took {}", player.getName().getString(), playerUUID, duration);
 		}
 		catch (Exception e) {
-			ORBMod.LOGGER.error(LOG_MARKER, "Failed to save recipe book data for Player{name={}, uuid={}} to {}", player.getName().getString(), playerUUID, path, e);
+			Orb.LOGGER.error(LOG_MARKER, "Failed to save recipe book data for Player{name={}, uuid={}} to {}", player.getName().getString(), playerUUID, path, e);
 		}
 	}
 
@@ -62,17 +61,17 @@ public final class ServerRecipeBookManager {
 			}
 		}
 		catch (Exception exception) {
-			ORBMod.LOGGER.warn(LOG_MARKER, "Failed to read recipe book data from disk for Player{name={}, uuid={}}", player.getName().getString(), playerUUID);
+			Orb.LOGGER.warn(LOG_MARKER, "Failed to read recipe book data from disk for Player{name={}, uuid={}}", player.getName().getString(), playerUUID);
 		}
 
 		if (recipeBookData != null) {
 			player.getRecipeBook().fromNbt(recipeBookData, server.getRecipeManager());
 
 			Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-			ORBMod.LOGGER.debug(LOG_MARKER, "Loading recipe book data for Player{name={}, uuid={}} took {}", player.getName().getString(), playerUUID, duration);
+			Orb.LOGGER.debug(LOG_MARKER, "Loading recipe book data for Player{name={}, uuid={}} took {}", player.getName().getString(), playerUUID, duration);
 		}
 		else {
-			ORBMod.LOGGER.warn(LOG_MARKER, "Failed to load recipe book data for Player{name={}, uuid={}}", player.getName().getString(), playerUUID);
+			Orb.LOGGER.warn(LOG_MARKER, "Failed to load recipe book data for Player{name={}, uuid={}}", player.getName().getString(), playerUUID);
 		}
 	}
 

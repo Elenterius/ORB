@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.mixin;
 
-import com.github.elenterius.orb.core.CommonHandler;
+import com.github.elenterius.orb.core.OrbServer;
 import net.minecraft.server.MinecraftServer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +17,7 @@ public abstract class MinecraftServerMixin {
 			target = "Lnet/minecraft/server/MinecraftServer;tickChildren(Ljava/util/function/BooleanSupplier;)V"
 	))
 	private void onServerTick(BooleanSupplier hasTimeLeft, CallbackInfo ci) {
-		CommonHandler.onServerTick((MinecraftServer) (Object) this);
+		OrbServer.onServerTick((MinecraftServer) (Object) this);
 	}
 
 }

@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.dev.datagen;
 
-import com.github.elenterius.orb.ORBMod;
+import com.github.elenterius.orb.core.Orb;
 import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -122,7 +122,7 @@ public final class WorkbenchRecipeBuilder {
 
 		@Override
 		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, ORBMod.rl(getItemName(internalBuilder.getResult())));
+			save(consumer, Orb.rl(getItemName(internalBuilder.getResult())));
 		}
 
 		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
@@ -177,7 +177,7 @@ public final class WorkbenchRecipeBuilder {
 
 		@Override
 		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, ORBMod.rl(getItemName(internalBuilder.getResult())));
+			save(consumer, Orb.rl(getItemName(internalBuilder.getResult())));
 		}
 
 		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {

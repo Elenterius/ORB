@@ -1,6 +1,5 @@
 package com.github.elenterius.orb.core;
 
-import com.github.elenterius.orb.ORBMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.client.searchtree.SearchRegistry;
@@ -115,7 +114,7 @@ public final class SearchTreeUpdater {
 	}
 
 	public void shutdown() {
-		ORBMod.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Shutting down...");
+		Orb.LOGGER.info(SearchTreeUpdater.UPDATE_MARKER, "Shutting down...");
 		executor.shutdown();
 		executor.shutdownNow();
 	}
@@ -145,7 +144,7 @@ public final class SearchTreeUpdater {
 			treeEntry.ORB$AtomicTree().set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			Orb.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Rebuild of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 
 			progressConsumer.accept(100);
 		}
@@ -164,7 +163,7 @@ public final class SearchTreeUpdater {
 			reference.set(tree);
 
 			long elapsedNanos = System.nanoTime() - startTime;
-			ORBMod.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
+			Orb.LOGGER.debug(SearchTreeUpdater.UPDATE_MARKER, "Refresh of {} index took {}", treeName, Duration.ofNanos(elapsedNanos));
 
 			progressConsumer.accept(100);
 		}

@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.github.elenterius.orb.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "refmap": "optimized_recipe_book.refmap.json",
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "MinecraftServerMixin", "NonNullListMixin", "PlayerListMixin", "RecipeCommandMixin", "ServerPlayerMixin", "ServerRecipeBookMixin", "StackedContentsAccessor", "client.RecipeBookAccessor"
+  ],
+  "client": [
+    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentAccessor", "client.RecipeBookComponentMixin", "client.RecipeCollectionAccessor", "client.RecipeCollectionMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
+  ],
+  "server": [ ]
+}

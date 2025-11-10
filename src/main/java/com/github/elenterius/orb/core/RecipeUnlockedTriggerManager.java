@@ -13,35 +13,42 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Worker for triggering 'recipe unlocked' criteria spread out over time.
+ * <p>
+ * We only hold items in the queue for a limited amount of time.
+ * Should it fail to complete in the given time frame the items are discarded.
+ * (e.g. Player leaves the server/world too early)
+ */
 public class RecipeUnlockedTriggerManager {
 
 	private static final int LIMIT_PER_TICK = 500; // 10,000 triggers in 20 ticks
 	private static final long CACHE_DURATION = Duration.ofMinutes(10).toMillis();
 
-	private static final Map<UUID, LinkedList<ResourceLocation>> PLAYER_TO_RECIPE_QUEUE = new HashMap<>();
-	private static final Object2LongMap<UUID> LAST_MODIFIED = new Object2LongOpenHashMap<>();
+	private final Map<UUID, LinkedList<ResourceLocation>> playerRecipeQueue = new HashMap<>();
+	private final Object2LongMap<UUID> lastModified = new Object2LongOpenHashMap<>();
 
-	public static void enqueue(ServerPlayer player, Recipe<?> recipe) {
+	public void enqueue(ServerPlayer player, Recipe<?> recipe) {
 		UUID uuid = player.getUUID();
-		PLAYER_TO_RECIPE_QUEUE.computeIfAbsent(uuid, id -> new LinkedList<>()).addLast(recipe.getId());
-		LAST_MODIFIED.put(uuid, System.currentTimeMillis());
+		playerRecipeQueue.computeIfAbsent(uuid, id -> new LinkedList<>()).addLast(recipe.getId());
+		lastModified.put(uuid, System.currentTimeMillis());
 	}
 
-	static void tick(MinecraftServer server) {
-		if (PLAYER_TO_RECIPE_QUEUE.isEmpty()) return;
+	public void tick(MinecraftServer server) {
+		if (playerRecipeQueue.isEmpty()) return;
 
-		Set<UUID> onlineIds = PLAYER_TO_RECIPE_QUEUE.keySet().stream()
+		Set<UUID> onlineIds = playerRecipeQueue.keySet().stream()
 				.filter(uuid -> server.getPlayerList().getPlayer(uuid) != null)
 				.collect(Collectors.toSet());
 
 		// remove expired caches for offline players
 		final long currentTime = System.currentTimeMillis();
-		List<UUID> expiredIds = PLAYER_TO_RECIPE_QUEUE.keySet().stream()
-				.filter(uuid -> !onlineIds.contains(uuid) && currentTime - LAST_MODIFIED.getLong(uuid) >= CACHE_DURATION)
+		List<UUID> expiredIds = playerRecipeQueue.keySet().stream()
+				.filter(uuid -> !onlineIds.contains(uuid) && currentTime - lastModified.getLong(uuid) >= CACHE_DURATION)
 				.toList();
 		for (UUID uuid : expiredIds) {
-			PLAYER_TO_RECIPE_QUEUE.remove(uuid);
-			LAST_MODIFIED.removeLong(uuid);
+			playerRecipeQueue.remove(uuid);
+			lastModified.removeLong(uuid);
 		}
 
 		LinkedList<ServerPlayer> availablePlayers = onlineIds.stream()
@@ -52,16 +59,16 @@ public class RecipeUnlockedTriggerManager {
 		RecipeManager recipeManager = server.getRecipeManager();
 		int counter = 0;
 
-		while (counter < LIMIT_PER_TICK && !PLAYER_TO_RECIPE_QUEUE.isEmpty() && !availablePlayers.isEmpty()) {
+		while (counter < LIMIT_PER_TICK && !playerRecipeQueue.isEmpty() && !availablePlayers.isEmpty()) {
 			ServerPlayer player = availablePlayers.removeFirst();
 			UUID playerUUID = player.getUUID();
 
-			if (PLAYER_TO_RECIPE_QUEUE.containsKey(playerUUID)) {
-				LinkedList<ResourceLocation> recipeQueue = PLAYER_TO_RECIPE_QUEUE.get(playerUUID);
+			if (playerRecipeQueue.containsKey(playerUUID)) {
+				LinkedList<ResourceLocation> recipeQueue = playerRecipeQueue.get(playerUUID);
 
 				if (recipeQueue.isEmpty()) {
-					PLAYER_TO_RECIPE_QUEUE.remove(playerUUID);
-					LAST_MODIFIED.removeLong(playerUUID);
+					playerRecipeQueue.remove(playerUUID);
+					lastModified.removeLong(playerUUID);
 					continue;
 				}
 
@@ -74,11 +81,11 @@ public class RecipeUnlockedTriggerManager {
 
 				if (!recipeQueue.isEmpty()) {
 					availablePlayers.addLast(player);
-					LAST_MODIFIED.put(playerUUID, System.currentTimeMillis());
+					lastModified.put(playerUUID, System.currentTimeMillis());
 				}
 				else {
-					PLAYER_TO_RECIPE_QUEUE.remove(playerUUID);
-					LAST_MODIFIED.removeLong(playerUUID);
+					playerRecipeQueue.remove(playerUUID);
+					lastModified.removeLong(playerUUID);
 				}
 			}
 		}

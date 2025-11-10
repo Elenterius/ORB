@@ -1,6 +1,6 @@
 package com.github.elenterius.orb.mixin.client;
 
-import com.github.elenterius.orb.ORBMod;
+import com.github.elenterius.orb.core.Orb;
 import com.github.elenterius.orb.core.SearchTreeUpdater;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -20,7 +20,7 @@ public abstract class FullTextSearchTreeMixin<T> {
 		List<T> result = original.call(query);
 
 		Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-		ORBMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Plain text search for '{}' took {}", query, duration);
+		Orb.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Plain text search for '{}' took {}", query, duration);
 
 		return result;
 	}
@@ -32,7 +32,7 @@ public abstract class FullTextSearchTreeMixin<T> {
 		List<T> result = original.call(namespace, path);
 
 		Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-		ORBMod.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Resource location search for '{}:{}' took {}", namespace, path, duration);
+		Orb.LOGGER.debug(SearchTreeUpdater.SEARCH_MARKER, "Resource location search for '{}:{}' took {}", namespace, path, duration);
 
 		return result;
 	}

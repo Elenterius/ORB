@@ -28,4 +28,4 @@ repo
 
 # generated data
 /src/generated/resources/.cache/
-/src/generated/resources/data/optimized_recipe_book
+/src/generated/resources/data/orb
