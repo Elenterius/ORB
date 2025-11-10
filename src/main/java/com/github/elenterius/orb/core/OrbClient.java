@@ -6,30 +6,22 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.IntSupplier;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
 public class OrbClient {
 
 	private static final SearchTreeUpdater SEARCH_TREE_UPDATER = new SearchTreeUpdater();
+
 	private static final RecipeBookPageUpdater RECIPE_BOOK_PAGE_UPDATER = new RecipeBookPageUpdater();
+	private static final Runnable EMPTY_CALLBACK = () -> {};
 
 	public static final long DEBOUNCE_DELAY_MS = 200;
 
 	//public static final ResourceLocation LOADING_TEXTURE = NeoForgeOrbMod.rl("textures/gui/loading.png");
 
-	public static final Component[] LOADING_MESSAGES = Stream.of(
-			"Recalibrating crafting grids for symmetry",
-			"Cross-checking recipe costs with villager trade inflation",
-			"Teaching Sniffers to sort recipes by smell",
-			"Trying to locate the meaning of crafting",
-			"Synchronizing recipe data with villager gossip",
-			"Finalizing crafting topology... almost table",
-			"Verifying that crafting tables are still made of wood",
-			"Debugging villagers who think emeralds are food",
-			"Verifying that all bread is legally bread and not toast",
-			"Updating indexes for user happiness",
-			"Counting crafting tables. There are too many."
-	).map(Component::literal).toArray(Component[]::new);
+	public static final Component LOADING_TITLE = Orb.translatable("msg", "loading.title");
+	public static final Component[] LOADING_MESSAGES = IntStream.range(0, 11).mapToObj(i -> Orb.translatable("msg", "loading." + i)).toArray(Component[]::new);
+	public static final float LOADING_MESSAGE_DURATION = 27.5f;
 
 	private OrbClient() {}
 
@@ -52,8 +44,12 @@ public class OrbClient {
 		return SEARCH_TREE_UPDATER.getProgressTacker(key);
 	}
 
-	public static void asyncUpdateRecipeBookPage(RecipeBookComponent recipeBookComponent, boolean resetPageNumber, boolean updateTabs) {
-		RECIPE_BOOK_PAGE_UPDATER.asyncUpdate(recipeBookComponent, resetPageNumber, updateTabs);
+	public static void asyncUpdateRecipeBookPage(RecipeBookComponent recipeBookComponent, boolean resetPageNumber) {
+		RECIPE_BOOK_PAGE_UPDATER.asyncUpdate(recipeBookComponent, resetPageNumber, EMPTY_CALLBACK);
+	}
+
+	public static void asyncUpdateRecipeBookPage(RecipeBookComponent recipeBookComponent, boolean resetPageNumber, final Runnable postUpdateCallback) {
+		RECIPE_BOOK_PAGE_UPDATER.asyncUpdate(recipeBookComponent, resetPageNumber, postUpdateCallback);
 	}
 
 }

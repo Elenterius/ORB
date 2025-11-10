@@ -1,3 +1,14 @@
 {
-  "msg.orb.loading.0": "Example Item"
+  "msg.orb.loading.title": "Updating Search Index",
+  "msg.orb.loading.0": "Recalibrating crafting grid symmetry",
+  "msg.orb.loading.1": "Analyzing villager trade inflation",
+  "msg.orb.loading.2": "Teaching Sniffers to sort recipes by smell",
+  "msg.orb.loading.3": "Trying to locate the meaning of crafting",
+  "msg.orb.loading.4": "Synchronizing recipe data with villager gossip",
+  "msg.orb.loading.5": "Finalizing crafting topology... almost table",
+  "msg.orb.loading.6": "Verifying that crafting tables are still made of wood",
+  "msg.orb.loading.7": "Debugging villagers who think emeralds are food",
+  "msg.orb.loading.8": "Verifying that all bread is legally bread and not toast",
+  "msg.orb.loading.9": "Updating indexes for user happiness",
+  "msg.orb.loading.10": "Counting crafting tables. There are too many."
 }

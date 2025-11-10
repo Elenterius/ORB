@@ -39,7 +39,7 @@ public final class RecipeBookPageUpdater {
 		return thread;
 	});
 
-	public void asyncUpdate(final RecipeBookComponent recipeBookComponent, final boolean resetPageNumber, final boolean updateTabs) {
+	public void asyncUpdate(final RecipeBookComponent recipeBookComponent, final boolean resetPageNumber, final Runnable postUpdateCallback) {
 		final RecipeBookCategories updateCategory = ((RecipeBookComponentAccessor) recipeBookComponent).getSelectedTab().getCategory();
 		final WeakReference<RecipeBookComponent> weakReference = new WeakReference<>(recipeBookComponent);
 
@@ -87,9 +87,7 @@ public final class RecipeBookPageUpdater {
 
 					accessor.getRecipeBookPage().updateCollections(validCollections, resetPageNumber);
 
-					if (updateTabs) {
-						accessor.callUpdateTabs();
-					}
+					postUpdateCallback.run();
 
 					Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
 					Orb.LOGGER.debug(LOG_MARKER, "Updated {} recipe entries which took {}", validCollections.size(), duration);
