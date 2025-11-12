@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -43,58 +44,27 @@ public final class RecipeBookPageUpdater {
 		final RecipeBookCategories updateCategory = ((RecipeBookComponentAccessor) recipeBookComponent).getSelectedTab().getCategory();
 		final WeakReference<RecipeBookComponent> weakReference = new WeakReference<>(recipeBookComponent);
 
+		final UpdateRequest supplier = UpdateRequest.of(recipeBookComponent);
+
 		CompletableFuture
-				.supplyAsync(UpdateRequest.of(recipeBookComponent), executor)
-				.handle((updates, throwable) -> {
+				.supplyAsync(supplier, executor)
+				.handleAsync((updates, throwable) -> {
 					if (throwable != null) {
 						Orb.LOGGER.error(LOG_MARKER, "Failed to asynchronously update of recipe collections for page {}", updateCategory.name(), throwable);
 						return null;
 					}
 
 					RecipeBookComponent ref = weakReference.get();
-					if (ref == null) {
-						Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the recipe page is no longer available");
-						return null;
-					}
-					RecipeBookComponentAccessor accessor = (RecipeBookComponentAccessor) ref;
-
-					long startTime = System.nanoTime();
-
-					RecipeBookCategories currentCategory = accessor.getSelectedTab().getCategory();
-					if (currentCategory != updateCategory) {
-						Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the current page category is different");
-						return null;
+					if (ref instanceof RecipeBookComponentExtension extension) {
+						extension.orb$getAtomicPageUpdate().set(new PageUpdate(updates, updateCategory, resetPageNumber, postUpdateCallback));
+						return updates;
 					}
 
-					ClientRecipeBook recipeBook = accessor.getBook();
-					List<RecipeCollection> validCollections = new LinkedList<>(recipeBook.getCollection(currentCategory));
-
-					validCollections.removeIf(collection -> !updates.containsKey(collection));
-
-					for (RecipeCollection collection : validCollections) {
-						RecipeCollectionUpdate update = updates.get(collection);
-						RecipeCollectionAccessor collectionAccessor = (RecipeCollectionAccessor) collection;
-						collectionAccessor.setFitsDimensions(update.fitsDimensions);
-						collectionAccessor.setCraftable(update.craftable);
-					}
-
-					validCollections.removeIf(collection -> !collection.hasKnownRecipes());
-					validCollections.removeIf(collection -> !collection.hasFitting());
-
-					if (accessor.getBook().isFiltering(accessor.getMenu())) {
-						validCollections.removeIf(collection -> !collection.hasCraftable());
-					}
-
-					accessor.getRecipeBookPage().updateCollections(validCollections, resetPageNumber);
-
-					postUpdateCallback.run();
-
-					Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
-					Orb.LOGGER.debug(LOG_MARKER, "Updated {} recipe entries which took {}", validCollections.size(), duration);
-					return updates;
+					Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the recipe page is no longer available");
+					return null;
 				})
 				.exceptionally(throwable -> {
-					Orb.LOGGER.error(LOG_MARKER, "Failed to apply update to recipe page {}", updateCategory.name(), throwable);
+					Orb.LOGGER.error(LOG_MARKER, "Failed to send update to recipe book page {}", updateCategory.name(), throwable);
 					return null;
 				});
 	}
@@ -105,11 +75,57 @@ public final class RecipeBookPageUpdater {
 		executor.shutdownNow();
 	}
 
+	public interface RecipeBookComponentExtension {
+		AtomicReference<PageUpdate> orb$getAtomicPageUpdate();
+	}
+
 	/**
 	 * @param fitsDimensions needs to be mutable
 	 * @param craftable      needs to be mutable
 	 */
 	public record RecipeCollectionUpdate(HashSet<Recipe<?>> fitsDimensions, HashSet<Recipe<?>> craftable) {}
+
+	public record PageUpdate(Map<RecipeCollection, RecipeCollectionUpdate> collectionUpdates, RecipeBookCategories updateCategory, boolean resetPageNumber, Runnable postUpdateCallback) {
+
+		public void apply(RecipeBookComponent recipeBookComponent) {
+			RecipeBookComponentAccessor accessor = (RecipeBookComponentAccessor) recipeBookComponent;
+
+			long startTime = System.nanoTime();
+
+			RecipeBookCategories currentCategory = accessor.getSelectedTab().getCategory();
+			if (currentCategory != updateCategory) {
+				Orb.LOGGER.warn(LOG_MARKER, "Discarding update: the current page category is different");
+				return;
+			}
+
+			ClientRecipeBook recipeBook = accessor.getBook();
+			List<RecipeCollection> validCollections = new LinkedList<>(recipeBook.getCollection(currentCategory));
+
+			validCollections.removeIf(collection -> !collectionUpdates.containsKey(collection));
+
+			for (RecipeCollection collection : validCollections) {
+				RecipeCollectionUpdate update = collectionUpdates.get(collection);
+				RecipeCollectionAccessor collectionAccessor = (RecipeCollectionAccessor) collection;
+				collectionAccessor.setFitsDimensions(update.fitsDimensions);
+				collectionAccessor.setCraftable(update.craftable);
+			}
+
+			validCollections.removeIf(collection -> !collection.hasKnownRecipes());
+			validCollections.removeIf(collection -> !collection.hasFitting());
+
+			if (accessor.getBook().isFiltering(accessor.getMenu())) {
+				validCollections.removeIf(collection -> !collection.hasCraftable());
+			}
+
+			accessor.getRecipeBookPage().updateCollections(validCollections, resetPageNumber);
+
+			postUpdateCallback.run();
+
+			Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
+			Orb.LOGGER.debug(LOG_MARKER, "Updated {} recipe entries which took {}", validCollections.size(), duration);
+		}
+
+	}
 
 	public static class RecipeBookUpdateException extends RuntimeException {
 		public RecipeBookUpdateException(String message) {

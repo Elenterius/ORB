@@ -1,4 +1,5 @@
 {
+  "msg.orb.initializing.title": "Initializing...",
   "msg.orb.loading.title": "Updating Search Index",
   "msg.orb.loading.0": "Recalibrating crafting grid symmetry",
   "msg.orb.loading.1": "Analyzing villager trade inflation",
