@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 public class RecipeUnlockedTriggerManager {
 
-	private static final int LIMIT_PER_TICK = 500; // 10,000 triggers in 20 ticks
+	private static final int LIMIT_PER_TICK = 500;
 	private static final long CACHE_DURATION = Duration.ofMinutes(10).toMillis();
 
 	private final Map<UUID, LinkedList<ResourceLocation>> playerRecipeQueue = new HashMap<>();
@@ -36,6 +36,7 @@ public class RecipeUnlockedTriggerManager {
 
 	public void tick(MinecraftServer server) {
 		if (playerRecipeQueue.isEmpty()) return;
+		if (server.getTickCount() % 10 == 0) return;
 
 		Set<UUID> onlineIds = playerRecipeQueue.keySet().stream()
 				.filter(uuid -> server.getPlayerList().getPlayer(uuid) != null)
