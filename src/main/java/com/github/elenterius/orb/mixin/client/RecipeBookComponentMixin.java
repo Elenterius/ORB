@@ -5,7 +5,6 @@ import com.github.elenterius.orb.core.RecipeBookPageUpdater;
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.client.ClientRecipeBook;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -17,7 +16,6 @@ import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.RecipeBookMenu;
 import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,7 +45,10 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	private final AtomicReference<RecipeBookPageUpdater.PageUpdate> orb$AtomicPageUpdate = new AtomicReference<>();
 
 	@Unique
-	private boolean orb$initialized = false;
+	private boolean orb$IsForcedUpdateRequired = false;
+
+	@Unique
+	private boolean orb$Initialized = false;
 
 	@Unique
 	private float orb$Time = (float) Math.random() * OrbClient.LOADING_MESSAGES.length;
@@ -72,16 +73,6 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	protected abstract void updateTabs();
 
 	@Shadow
-	private ClientRecipeBook book;
-
-	@Shadow
-	protected RecipeBookMenu<?> menu;
-
-	@Shadow
-	@Nullable
-	private RecipeBookTabButton selectedTab;
-
-	@Shadow
 	@Nullable
 	private EditBox searchBox;
 
@@ -92,7 +83,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapOperation(method = "initVisuals", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;updateCollections(Z)V"))
 	private void onInitVisuals(RecipeBookComponent instance, boolean resetPageNumber, Operation<Void> original) {
-		if (!orb$initialized) {
+		if (!orb$Initialized) {
 			// do first update with invisible buttons to prevent NPE and Divide By Zero errors because RecipeButton doesn't account for no recipe collections or no craftable recipe
 			((RecipeBookPageAccessor) recipeBookPage).callListButtons(widget -> widget.visible = false);
 		}
@@ -107,7 +98,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 		OrbClient.asyncUpdateRecipeBookPage(orb$Self(), resetPageNumber, () -> {
 			updateTabs();
-			orb$initialized = true;
+			orb$Initialized = true;
 		});
 	}
 
@@ -118,6 +109,9 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 				extension.orb$invalidate();
 			}
 		});
+		if (orb$IndexingProgress.getAsInt() < 100) {
+			orb$IsForcedUpdateRequired = true;
+		}
 		OrbClient.asyncUpdateRecipeBookPage(orb$Self(), resetPageNumber);
 	}
 
@@ -127,7 +121,12 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 		//debounce to mitigate excessive updating of the recipe pages
 		if (elapsedTime >= OrbClient.DEBOUNCE_DELAY_MS) {
-			original.call();
+			if (orb$IndexingProgress.getAsInt() >= 100) {
+				original.call();
+			}
+			else {
+				orb$IsForcedUpdateRequired = true;
+			}
 			orb$IsSearchDebounced = false;
 			orb$SearchTimestamp = System.currentTimeMillis();
 		}
@@ -140,7 +139,14 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	private void onpPreTick(CallbackInfo ci) {
 		RecipeBookPageUpdater.PageUpdate pageUpdate = orb$AtomicPageUpdate.getAndSet(null);
 		if (pageUpdate != null) {
+			if (orb$IndexingProgress.getAsInt() >= 100) {
+				orb$IsForcedUpdateRequired = false;
+			}
 			pageUpdate.apply(orb$Self());
+		}
+		else if (orb$IsForcedUpdateRequired && orb$IndexingProgress.getAsInt() >= 100) {
+			orb$IsForcedUpdateRequired = false;
+			OrbClient.asyncUpdateRecipeBookPage(orb$Self(), false);
 		}
 	}
 
@@ -156,7 +162,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapMethod(method = "mouseClicked")
 	private boolean onMouseClicked(double mouseX, double mouseY, int button, Operation<Boolean> original) {
-		if (orb$initialized) {
+		if (orb$Initialized) {
 			return original.call(mouseX, mouseY, button);
 		}
 		return false;
@@ -164,21 +170,21 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapOperation(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;renderTooltip(Lnet/minecraft/client/gui/GuiGraphics;II)V"))
 	private void onRenderTooltip(RecipeBookPage instance, GuiGraphics guiGraphics, int mouseX, int mouseY, Operation<Void> original) {
-		if (orb$initialized) {
+		if (orb$Initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY);
 		}
 	}
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
 	private void onRenderSearchBox(EditBox instance, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if (orb$initialized) {
+		if (orb$Initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY, partialTick);
 		}
 	}
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/StateSwitchingButton;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
 	private void onRenderFilterButton(StateSwitchingButton instance, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if (orb$initialized) {
+		if (orb$Initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY, partialTick);
 		}
 	}
@@ -187,14 +193,14 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookTabButton;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V")
 	)
 	private void onRenderTabs(RecipeBookTabButton instance, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if (orb$initialized) {
+		if (orb$Initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY, partialTick);
 		}
 	}
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;render(Lnet/minecraft/client/gui/GuiGraphics;IIIIF)V"))
 	private void onRenderPage(RecipeBookPage instance, GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if (orb$initialized && (!orb$HasSearchQuery() || orb$IndexingProgress.getAsInt() >= 100)) {
+		if (orb$Initialized && (!orb$HasSearchQuery() || orb$IndexingProgress.getAsInt() >= 100)) {
 			original.call(instance, guiGraphics, x, y, mouseX, mouseY, partialTick);
 			return;
 		}
@@ -204,7 +210,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 		//guiGraphics.blit(TEXTURE, x1, y1 - minecraft.font.lineHeight / 2 - TEXTURE_V_HEIGHT, 0, 0, TEXTURE_U_WIDTH, TEXTURE_V_HEIGHT, 128, 128);
 
-		guiGraphics.drawCenteredString(minecraft.font, !orb$initialized ? OrbClient.INITIALIZING_TITLE : OrbClient.LOADING_TITLE, x1, y1, 0xFF_FAFAFA);
+		guiGraphics.drawCenteredString(minecraft.font, !orb$Initialized ? OrbClient.INITIALIZING_TITLE : OrbClient.LOADING_TITLE, x1, y1, 0xFF_FAFAFA);
 
 		orb$Time += partialTick;
 		int y2 = y1 + minecraft.font.lineHeight + 4;
