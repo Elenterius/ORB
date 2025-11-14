@@ -13,7 +13,6 @@ import net.minecraft.client.gui.components.StateSwitchingButton;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookPage;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookTabButton;
-import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -29,7 +28,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntSupplier;
@@ -94,12 +92,17 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapOperation(method = "initVisuals", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;updateCollections(Z)V"))
 	private void onInitVisuals(RecipeBookComponent instance, boolean resetPageNumber, Operation<Void> original) {
-		// update with placeholder collections to prevent NPE and Divide By Zero errors caused by RecipeButtons on the recipe page
 		if (!orb$initialized) {
-			recipeBookPage.updateCollections(List.of(), resetPageNumber); //do first update with empty placeholder collections
+			// do first update with invisible buttons to prevent NPE and Divide By Zero errors because RecipeButton doesn't account for no recipe collections or no craftable recipe
+			((RecipeBookPageAccessor) recipeBookPage).callListButtons(widget -> widget.visible = false);
 		}
 		else {
-			orb$updateWithPlaceholder(resetPageNumber);
+			// when closing/opening the recipe book inside the gui invalidate the recipe buttons to prevent errors
+			((RecipeBookPageAccessor) recipeBookPage).callListButtons(widget -> {
+				if (widget instanceof RecipeBookPageUpdater.RecipeButtonExtension extension) {
+					extension.orb$invalidate();
+				}
+			});
 		}
 
 		OrbClient.asyncUpdateRecipeBookPage(orb$Self(), resetPageNumber, () -> {
@@ -110,11 +113,11 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapMethod(method = "updateCollections")
 	private void onUpdateCollections(boolean resetPageNumber, Operation<Void> original) {
-		// refresh with placeholder collection to prevent Divide by Zero errors caused by the rendering of the recipe buttons in the recipe page
-		// this boils down to recipe buttons having their own reference to the recipe book and checking by themselves if the book is filtering atm which can lead to a recipe
-		// collection not having any items and the recipe button doesn't expect that edge case
-		orb$updateWithPlaceholder(resetPageNumber); //TODO: to fix flickering by not supply placeholders and instead patching the RecipeButton to handle collections without craftable items
-
+		((RecipeBookPageAccessor) recipeBookPage).callListButtons(widget -> {
+			if (widget instanceof RecipeBookPageUpdater.RecipeButtonExtension extension) {
+				extension.orb$invalidate();
+			}
+		});
 		OrbClient.asyncUpdateRecipeBookPage(orb$Self(), resetPageNumber);
 	}
 
@@ -153,7 +156,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapMethod(method = "mouseClicked")
 	private boolean onMouseClicked(double mouseX, double mouseY, int button, Operation<Boolean> original) {
-		if ((orb$initialized && !orb$HasSearchQuery()) || orb$IndexingProgress.getAsInt() >= 100) {
+		if (orb$initialized) {
 			return original.call(mouseX, mouseY, button);
 		}
 		return false;
@@ -161,14 +164,14 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapOperation(method = "renderTooltip", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;renderTooltip(Lnet/minecraft/client/gui/GuiGraphics;II)V"))
 	private void onRenderTooltip(RecipeBookPage instance, GuiGraphics guiGraphics, int mouseX, int mouseY, Operation<Void> original) {
-		if ((orb$initialized && !orb$HasSearchQuery()) || orb$IndexingProgress.getAsInt() >= 100) {
+		if (orb$initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY);
 		}
 	}
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"))
 	private void onRenderSearchBox(EditBox instance, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if (orb$initialized && orb$IndexingProgress.getAsInt() >= 100) {
+		if (orb$initialized) {
 			original.call(instance, guiGraphics, mouseX, mouseY, partialTick);
 		}
 	}
@@ -191,7 +194,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 	@WrapOperation(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookPage;render(Lnet/minecraft/client/gui/GuiGraphics;IIIIF)V"))
 	private void onRenderPage(RecipeBookPage instance, GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, float partialTick, Operation<Void> original) {
-		if ((orb$initialized && !orb$HasSearchQuery()) || orb$IndexingProgress.getAsInt() >= 100) {
+		if (orb$initialized && (!orb$HasSearchQuery() || orb$IndexingProgress.getAsInt() >= 100)) {
 			original.call(instance, guiGraphics, x, y, mouseX, mouseY, partialTick);
 			return;
 		}
@@ -213,30 +216,6 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 			FormattedCharSequence line = lines.get(j);
 			guiGraphics.drawCenteredString(minecraft.font, line, x1, y2 + j * (minecraft.font.lineHeight + 2), 0xFF_9F9F9F);
 		}
-	}
-
-	@Unique
-	private void orb$updateWithPlaceholder(boolean resetPageNumber) {
-		boolean isFiltering = book.isFiltering(menu);
-
-		List<RecipeCollection> list;
-
-		if (isFiltering) {
-			list = ((RecipeBookPageAccessor) recipeBookPage).getRecipeCollections(); //use previous
-		}
-		else {
-			list = book.getCollection(selectedTab.getCategory()); //use all in case some recipes were filtered out previously
-		}
-
-		List<RecipeCollection> collections = new LinkedList<>(list);
-		collections.removeIf((collection) -> !collection.hasKnownRecipes());
-		collections.removeIf((collection) -> !collection.hasFitting());
-
-		if (isFiltering) {
-			collections.removeIf((collection) -> !collection.hasCraftable()); //this is important when filtering or we will get errors
-		}
-
-		recipeBookPage.updateCollections(collections, resetPageNumber);
 	}
 
 	@Unique

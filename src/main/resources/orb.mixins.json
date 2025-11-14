@@ -11,7 +11,7 @@
     "MinecraftServerMixin", "NonNullListMixin", "PlayerListMixin", "RecipeCommandMixin", "ServerPlayerMixin", "ServerRecipeBookMixin", "StackedContentsAccessor", "client.RecipeBookAccessor"
   ],
   "client": [
-    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentAccessor", "client.RecipeBookComponentMixin", "client.RecipeBookPageAccessor", "client.RecipeCollectionAccessor", "client.RecipeCollectionMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
+    "client.CreativeModeInventoryMixin", "client.FullTextSearchTreeMixin", "client.RecipeBookComponentAccessor", "client.RecipeBookComponentMixin", "client.RecipeBookPageAccessor", "client.RecipeButtonMixin", "client.RecipeCollectionAccessor", "client.RecipeCollectionMixin", "client.SearchRegistryMixin", "client.TreeEntryMixin"
   ],
   "server": [ ]
 }

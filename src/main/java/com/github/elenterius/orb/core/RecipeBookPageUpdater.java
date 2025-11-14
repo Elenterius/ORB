@@ -79,6 +79,10 @@ public final class RecipeBookPageUpdater {
 		AtomicReference<PageUpdate> orb$getAtomicPageUpdate();
 	}
 
+	public interface RecipeButtonExtension {
+		void orb$invalidate();
+	}
+
 	/**
 	 * @param fitsDimensions needs to be mutable
 	 * @param craftable      needs to be mutable
