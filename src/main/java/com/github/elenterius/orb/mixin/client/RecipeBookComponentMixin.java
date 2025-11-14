@@ -210,7 +210,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 		//guiGraphics.blit(TEXTURE, x1, y1 - minecraft.font.lineHeight / 2 - TEXTURE_V_HEIGHT, 0, 0, TEXTURE_U_WIDTH, TEXTURE_V_HEIGHT, 128, 128);
 
-		guiGraphics.drawCenteredString(minecraft.font, !orb$Initialized ? OrbClient.INITIALIZING_TITLE : OrbClient.LOADING_TITLE, x1, y1, 0xFF_FAFAFA);
+		guiGraphics.drawCenteredString(minecraft.font, !orb$Initialized ? OrbClient.INITIALIZING_TITLE : OrbClient.INDEXING_TITLE, x1, y1, 0xFF_FAFAFA);
 
 		orb$Time += partialTick;
 		int y2 = y1 + minecraft.font.lineHeight + 4;

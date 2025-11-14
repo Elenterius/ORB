@@ -3,6 +3,7 @@ package com.github.elenterius.orb.core;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.IntSupplier;
@@ -11,6 +12,7 @@ import java.util.stream.IntStream;
 public class OrbClient {
 
 	private static final SearchTreeUpdater SEARCH_TREE_UPDATER = new SearchTreeUpdater();
+	private static final IntSupplier FULL_PROGRESS = () -> 100;
 
 	private static final RecipeBookPageUpdater RECIPE_BOOK_PAGE_UPDATER = new RecipeBookPageUpdater();
 	private static final Runnable EMPTY_CALLBACK = () -> {};
@@ -19,7 +21,7 @@ public class OrbClient {
 
 	//public static final ResourceLocation LOADING_TEXTURE = NeoForgeOrbMod.rl("textures/gui/loading.png");
 
-	public static final Component LOADING_TITLE = Orb.translatable("msg", "loading.title");
+	public static final Component INDEXING_TITLE = Orb.translatable("msg", "loading.title");
 	public static final Component INITIALIZING_TITLE = Orb.translatable("msg", "initializing.title");
 	public static final Component[] LOADING_MESSAGES = IntStream.range(0, 11).mapToObj(i -> Orb.translatable("msg", "loading." + i)).toArray(Component[]::new);
 	public static final float LOADING_MESSAGE_DURATION = 27.5f;
@@ -41,8 +43,8 @@ public class OrbClient {
 		SEARCH_TREE_UPDATER.submitRefresh(treeEntry);
 	}
 
-	public static IntSupplier getIndexingProgress(SearchRegistry.Key<?> key) {
-		return SEARCH_TREE_UPDATER.getProgressTacker(key);
+	public static IntSupplier getIndexingProgress(SearchRegistry.@Nullable Key<?> key) {
+		return key != null ? SEARCH_TREE_UPDATER.getProgressTacker(key) : FULL_PROGRESS;
 	}
 
 	public static void asyncUpdateRecipeBookPage(RecipeBookComponent recipeBookComponent, boolean resetPageNumber) {
