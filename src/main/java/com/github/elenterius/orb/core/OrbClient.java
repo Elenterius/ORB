@@ -21,9 +21,9 @@ public class OrbClient {
 
 	//public static final ResourceLocation LOADING_TEXTURE = NeoForgeOrbMod.rl("textures/gui/loading.png");
 
-	public static final Component INDEXING_TITLE = Orb.translatable("msg", "loading.title");
-	public static final Component INITIALIZING_TITLE = Orb.translatable("msg", "initializing.title");
-	public static final Component[] LOADING_MESSAGES = IntStream.range(0, 11).mapToObj(i -> Orb.translatable("msg", "loading." + i)).toArray(Component[]::new);
+	public static final Component INDEXING_TITLE = Orb.translatable("msg", "indexing");
+	public static final Component INITIALIZING_TITLE = Orb.translatable("msg", "initializing");
+	public static final Component[] LOADING_MESSAGES = IntStream.range(0, 35).mapToObj(i -> Orb.translatable("msg", "loading." + i)).toArray(Component[]::new);
 	public static final float LOADING_MESSAGE_DURATION = 27.5f;
 
 	private OrbClient() {}
