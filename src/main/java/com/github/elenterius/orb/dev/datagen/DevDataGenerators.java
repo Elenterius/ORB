@@ -1,25 +1,23 @@
 package com.github.elenterius.orb.dev.datagen;
 
-import com.github.elenterius.orb.core.Orb;
 import com.github.elenterius.orb.dev.DevEnvironment;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
 import org.apache.commons.numbers.combinatorics.Combinations;
 
 import java.util.Iterator;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
-@Mod.EventBusSubscriber(modid = Orb.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class DevDataGenerators {
 
 	private DevDataGenerators() {
@@ -30,17 +28,17 @@ public final class DevDataGenerators {
 		if (FMLEnvironment.production) return;
 
 		DataGenerator generator = event.getGenerator();
-		generator.addProvider(true, new DevRecipeProvider(generator.getPackOutput()));
+		generator.addProvider(true, new DevRecipeProvider(generator.getPackOutput(), event.getLookupProvider()));
 	}
 
 	private static class DevRecipeProvider extends RecipeProvider {
 
-		public DevRecipeProvider(PackOutput output) {
-			super(output);
+		public DevRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+			super(output, registries);
 		}
 
 		@Override
-		protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
+		protected void buildRecipes(RecipeOutput recipeOutput) {
 			Item[] ingredients = new Item[]{
 					Items.WHITE_CONCRETE, Items.ORANGE_CONCRETE, Items.MAGENTA_CONCRETE, Items.LIGHT_BLUE_CONCRETE, Items.YELLOW_CONCRETE,
 					Items.LIME_CONCRETE, Items.PINK_CONCRETE, Items.GRAY_CONCRETE, Items.LIGHT_GRAY_CONCRETE, Items.CYAN_CONCRETE, Items.PURPLE_CONCRETE,
@@ -54,7 +52,7 @@ public final class DevDataGenerators {
 			int craftingSlots = 9;
 			Iterator<int[]> combinations = Combinations.of(ingredients.length, craftingSlots).iterator();
 
-			DevEnvironment.ITEMS.getEntries().stream().map(RegistryObject::get).forEach(item -> {
+			DevEnvironment.ITEMS.getEntries().stream().map(DeferredHolder::get).forEach(item -> {
 				if (!combinations.hasNext()) throw new RuntimeException("You Must Construct Additional Pylons!");
 
 				WorkbenchRecipeBuilder.ShapedBuilder builder = WorkbenchRecipeBuilder.shaped(RecipeCategory.MISC, item)
@@ -65,7 +63,7 @@ public final class DevDataGenerators {
 					builder.define((char) ('A' + i), ingredients[combination[i]]);
 				}
 
-				builder.unlockedBy(item).save(consumer);
+				builder.unlockedBy(item).save(recipeOutput);
 			});
 		}
 

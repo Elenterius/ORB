@@ -1,9 +1,10 @@
 package com.github.elenterius.orb.dev.datagen;
 
 import com.github.elenterius.orb.core.Orb;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.advancements.Criterion;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -11,10 +12,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jspecify.annotations.Nullable;
-
-import java.util.function.Consumer;
 
 public final class WorkbenchRecipeBuilder {
 
@@ -69,8 +67,7 @@ public final class WorkbenchRecipeBuilder {
 	}
 
 	private static String getItemName(ItemLike itemLike) {
-		ResourceLocation key = ForgeRegistries.ITEMS.getKey(itemLike.asItem());
-		return key != null ? key.getPath() : "unknown";
+		return BuiltInRegistries.ITEM.getKey(itemLike.asItem()).getPath();
 	}
 
 	private static String getTagName(TagKey<Item> tag) {
@@ -115,18 +112,18 @@ public final class WorkbenchRecipeBuilder {
 			return this;
 		}
 
-		public ShapedBuilder unlockedBy(String name, CriterionTriggerInstance trigger) {
-			internalBuilder.unlockedBy(name, trigger);
+		public ShapedBuilder unlockedBy(String name, Criterion<?> criterion) {
+			internalBuilder.unlockedBy(name, criterion);
 			return this;
 		}
 
 		@Override
-		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, Orb.rl(getItemName(internalBuilder.getResult())));
+		public void save(RecipeOutput recipeOutput, @Nullable RecipeCategory category) {
+			save(recipeOutput, Orb.rl(getItemName(internalBuilder.getResult())));
 		}
 
-		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(consumer, recipeId.withPrefix("crafting/"));
+		public void save(RecipeOutput recipeOutput, ResourceLocation recipeId) {
+			internalBuilder.save(recipeOutput, recipeId.withPrefix("crafting/"));
 		}
 
 	}
@@ -170,18 +167,18 @@ public final class WorkbenchRecipeBuilder {
 		}
 
 		@Override
-		public ShapelessBuilder unlockedBy(String name, CriterionTriggerInstance trigger) {
-			internalBuilder.unlockedBy(name, trigger);
+		public ShapelessBuilder unlockedBy(String name, Criterion<?> criterion) {
+			internalBuilder.unlockedBy(name, criterion);
 			return this;
 		}
 
 		@Override
-		public void save(Consumer<FinishedRecipe> consumer, @Nullable RecipeCategory category) {
-			save(consumer, Orb.rl(getItemName(internalBuilder.getResult())));
+		public void save(RecipeOutput recipeOutput, @Nullable RecipeCategory category) {
+			save(recipeOutput, Orb.rl(getItemName(internalBuilder.getResult())));
 		}
 
-		public void save(Consumer<FinishedRecipe> consumer, ResourceLocation recipeId) {
-			internalBuilder.save(consumer, recipeId.withPrefix("crafting/"));
+		public void save(RecipeOutput recipeOutput, ResourceLocation recipeId) {
+			internalBuilder.save(recipeOutput, recipeId.withPrefix("crafting/"));
 		}
 
 	}

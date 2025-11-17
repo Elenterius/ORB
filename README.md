@@ -1,4 +1,4 @@
-# ORB – Optimized Recipe Book
+# ORB — Optimized Recipe Book
 
 ORB aims to improve the performance of the recipe book without removing its functionality.
 

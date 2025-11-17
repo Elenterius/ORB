@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 public interface RecipeBookComponentAccessor {
 
 	@Accessor
-	RecipeBookMenu<?> getMenu();
+	RecipeBookMenu<?, ?> getMenu();
 
 	@Accessor
 	RecipeBookTabButton getSelectedTab();

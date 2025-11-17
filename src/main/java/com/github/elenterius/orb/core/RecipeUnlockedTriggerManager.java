@@ -6,7 +6,7 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 
 import java.time.Duration;
@@ -22,15 +22,15 @@ import java.util.stream.Collectors;
  */
 public class RecipeUnlockedTriggerManager {
 
-	private static final int LIMIT_PER_TICK = 500;
+	public static final int LIMIT_PER_TICK = 500;
 	private static final long CACHE_DURATION = Duration.ofMinutes(10).toMillis();
 
 	private final Map<UUID, LinkedList<ResourceLocation>> playerRecipeQueue = new HashMap<>();
 	private final Object2LongMap<UUID> lastModified = new Object2LongOpenHashMap<>();
 
-	public void enqueue(ServerPlayer player, Recipe<?> recipe) {
+	public void enqueue(ServerPlayer player, RecipeHolder<?> recipe) {
 		UUID uuid = player.getUUID();
-		playerRecipeQueue.computeIfAbsent(uuid, id -> new LinkedList<>()).addLast(recipe.getId());
+		playerRecipeQueue.computeIfAbsent(uuid, id -> new LinkedList<>()).addLast(recipe.id());
 		lastModified.put(uuid, System.currentTimeMillis());
 	}
 
@@ -74,7 +74,7 @@ public class RecipeUnlockedTriggerManager {
 				}
 
 				ResourceLocation recipeId = recipeQueue.removeFirst();
-				Optional<? extends Recipe<?>> optionalRecipe = recipeManager.byKey(recipeId);
+				Optional<RecipeHolder<?>> optionalRecipe = recipeManager.byKey(recipeId);
 				if (optionalRecipe.isPresent()) {
 					CriteriaTriggers.RECIPE_UNLOCKED.trigger(player, optionalRecipe.get());
 					counter++;

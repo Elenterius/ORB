@@ -1,16 +1,15 @@
 package com.github.elenterius.orb.dev;
 
 import com.github.elenterius.orb.core.Orb;
+import com.github.elenterius.orb.dev.datagen.DevDataGenerators;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.*;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
@@ -26,15 +25,14 @@ import java.util.stream.Collectors;
 public final class DevEnvironment {
 
 	public static final int NUMBER_OF_ITEMS = 50_000;
-	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, Orb.MOD_ID);
+	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(BuiltInRegistries.ITEM, Orb.MOD_ID);
 
 	private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Orb.MOD_ID);
 
-	private DevEnvironment() {
-	}
+	private DevEnvironment() {}
 
-	public static void init() {
-		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+	public static void init(IEventBus modBus) {
+		modBus.register(DevDataGenerators.class);
 
 		StringProvider provider = new StringProvider();
 
@@ -43,15 +41,15 @@ public final class DevEnvironment {
 			List<String> text = provider.getTextFromAlice29(3);
 			ITEMS.register("dev_item_" + i, () -> new TestItem(name, text));
 		}
-		ITEMS.register(modEventBus);
+		ITEMS.register(modBus);
 
 		TABS.register("dev", () -> CreativeModeTab.builder()
 				.title(Component.literal("Dev Items"))
 				.icon(Items.KNOWLEDGE_BOOK::getDefaultInstance)
-				.displayItems((context, output) -> ITEMS.getEntries().stream().map(RegistryObject::get).forEach(output::accept))
+				.displayItems((context, output) -> ITEMS.getEntries().stream().map(DeferredHolder::get).forEach(output::accept))
 				.build()
 		);
-		TABS.register(modEventBus);
+		TABS.register(modBus);
 	}
 
 	private static class TestItem extends Item {
@@ -71,7 +69,7 @@ public final class DevEnvironment {
 		}
 
 		@Override
-		public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
+		public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
 			tooltipComponents.addAll(textComponents);
 		}
 

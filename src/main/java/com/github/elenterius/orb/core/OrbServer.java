@@ -2,7 +2,7 @@ package com.github.elenterius.orb.core;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 public final class OrbServer {
 
@@ -14,7 +14,7 @@ public final class OrbServer {
 		RECIPE_UNLOCKED_TRIGGERS.tick(server);
 	}
 
-	public static void enqueueRecipeUnlockedTrigger(ServerPlayer player, Recipe<?> recipe) {
+	public static void enqueueRecipeUnlockedTrigger(ServerPlayer player, RecipeHolder<?> recipe) {
 		RECIPE_UNLOCKED_TRIGGERS.enqueue(player, recipe);
 	}
 

@@ -110,11 +110,6 @@ configurations {
 	runtimeClasspath.extendsFrom localRuntime
 }
 
-//mixin {
-//	add sourceSets.main, "${mod_id}.refmap.json"
-//	config "${mod_id}.mixins.json"
-//}
-
 dependencies {
 //	compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
 //	implementation(jarJar("io.github.llamalad7:mixinextras-forge") {
@@ -127,19 +122,16 @@ dependencies {
 //	annotationProcessor('org.spongepowered:mixin:0.8.5:processor')
 
 	api("org.jspecify:jspecify:1.0.0")
-//	api('org.jetbrains:annotations:26.0.2-1')
 	api('org.apache.commons:commons-numbers-combinatorics:1.2')
 	additionalRuntimeClasspath('org.apache.commons:commons-numbers-combinatorics:1.2') // we only need to define the additional runtime classpath for Minecraft versions <= 1.21.8
 
-	localRuntime("curse.maven:connectivity-470193:7032387") // fixes issues with big network packets due to 50k items/recipes
-	localRuntime("curse.maven:cupboard-326652:5470032") // dependency of Connectivity mod
+	localRuntime("curse.maven:connectivity-470193:7032388") // fixes issues with big network packets due to 50k items/recipes
+	localRuntime("curse.maven:cupboard-326652:6078150") // dependency of Connectivity mod
+
+	localRuntime("curse.maven:modernfix-790626:7200212")
 }
 
 jar {
-//	manifest.attributes([
-//			"MixinConfigs": "${mod_id}.mixins.json"
-//	])
-
 	exclude('data')
 	exclude('canterbury_corpus')
 	exclude('com/github/elenterius/orb/dev')

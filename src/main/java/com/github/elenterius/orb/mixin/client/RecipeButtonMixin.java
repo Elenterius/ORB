@@ -8,7 +8,7 @@ import net.minecraft.client.gui.screens.recipebook.RecipeButton;
 import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
 import net.minecraft.stats.RecipeBook;
 import net.minecraft.world.inventory.RecipeBookMenu;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -26,7 +26,7 @@ public abstract class RecipeButtonMixin implements RecipeBookPageUpdater.RecipeB
 	@Shadow
 	private RecipeBook book;
 	@Shadow
-	private RecipeBookMenu<?> menu;
+	private RecipeBookMenu<?, ?> menu;
 
 	@Unique
 	private boolean orb$IsValid = false;
@@ -42,10 +42,10 @@ public abstract class RecipeButtonMixin implements RecipeBookPageUpdater.RecipeB
 	}
 
 	@WrapMethod(method = "getOrderedRecipes")
-	private List<Recipe<?>> onGetOrderedRecipes(Operation<List<Recipe<?>>> original) {
+	private List<RecipeHolder<?>> onGetOrderedRecipes(Operation<List<RecipeHolder<?>>> original) {
 		if (orb$IsValid) return original.call();
 
-		List<Recipe<?>> displayRecipes = collection.getDisplayRecipes(true);
+		List<RecipeHolder<?>> displayRecipes = collection.getDisplayRecipes(true);
 
 		// prevent Divide by Zero errors
 		if (displayRecipes.isEmpty() || !book.isFiltering(menu)) {

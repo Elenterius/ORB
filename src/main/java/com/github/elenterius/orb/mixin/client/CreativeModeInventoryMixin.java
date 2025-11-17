@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
+import net.minecraft.client.multiplayer.SessionSearchTrees;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.FormattedCharSequence;
@@ -14,7 +15,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.client.CreativeModeTabSearchRegistry;
+import net.neoforged.neoforge.client.CreativeModeTabSearchRegistry;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -34,9 +35,6 @@ public abstract class CreativeModeInventoryMixin extends EffectRenderingInventor
 	private static CreativeModeTab selectedTab;
 
 	@Shadow
-	private EditBox searchBox;
-
-	@Shadow
 	protected abstract void refreshSearchResults();
 
 	@Shadow
@@ -44,6 +42,9 @@ public abstract class CreativeModeInventoryMixin extends EffectRenderingInventor
 	private Set<TagKey<Item>> visibleTags;
 	@Shadow
 	private float scrollOffs;
+
+	@Shadow
+	private EditBox searchBox;
 	@Unique
 	private IntSupplier orb$NameIndexingProgress = OrbClient.getIndexingProgress(null);
 
@@ -58,6 +59,33 @@ public abstract class CreativeModeInventoryMixin extends EffectRenderingInventor
 
 	public CreativeModeInventoryMixin(CreativeModeInventoryScreen.ItemPickerMenu menu, Inventory playerInventory, Component title) {
 		super(menu, playerInventory, title);
+	}
+
+	@Inject(
+			method = "containerTick",
+			at = @At(
+					value = "INVOKE", shift = At.Shift.AFTER,
+					target = "Lnet/minecraft/client/gui/screens/inventory/CreativeModeInventoryScreen;tryRefreshInvalidatedTabs(Lnet/minecraft/world/flag/FeatureFlagSet;ZLnet/minecraft/core/HolderLookup$Provider;)V"
+			)
+	)
+	private void onTick(CallbackInfo ci) {
+		SessionSearchTrees.Key nameSearchKey = CreativeModeTabSearchRegistry.getNameSearchKey(selectedTab);
+		SessionSearchTrees.Key tagSearchKey = CreativeModeTabSearchRegistry.getTagSearchKey(selectedTab);
+
+		if (nameSearchKey != null && CreativeModeTabSearchRegistry.getNameSearchTree(nameSearchKey).isDone()) {
+			OrbClient.getProgressTracker(nameSearchKey).set(100);
+		}
+
+		if (tagSearchKey != null && CreativeModeTabSearchRegistry.getTagSearchTree(tagSearchKey).isDone()) {
+			OrbClient.getProgressTracker(tagSearchKey).set(100);
+		}
+
+		orb$NameIndexingProgress = OrbClient.getIndexingProgress(nameSearchKey);
+		orb$TagIndexingProgress = OrbClient.getIndexingProgress(tagSearchKey);
+
+		if (orb$IsForcedUpdateRequired && selectedTab.hasSearchBar() && orb$NameIndexingProgress.getAsInt() >= 100 && orb$TagIndexingProgress.getAsInt() >= 100) {
+			refreshSearchResults();
+		}
 	}
 
 	@WrapMethod(method = "refreshSearchResults")
@@ -79,13 +107,6 @@ public abstract class CreativeModeInventoryMixin extends EffectRenderingInventor
 		menu.scrollTo(0f);
 
 		orb$IsForcedUpdateRequired = true;
-	}
-
-	@Inject(method = "containerTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/EditBox;tick()V"))
-	private void onTick(CallbackInfo ci) {
-		if (orb$IsForcedUpdateRequired && selectedTab.hasSearchBar() && orb$NameIndexingProgress.getAsInt() >= 100 && orb$TagIndexingProgress.getAsInt() >= 100) {
-			refreshSearchResults();
-		}
 	}
 
 	@Inject(method = "renderBg", at = @At("TAIL"))
@@ -122,5 +143,4 @@ public abstract class CreativeModeInventoryMixin extends EffectRenderingInventor
 		}
 	}
 
-	//TODO: force refresh results when search tree rebuild is done
 }

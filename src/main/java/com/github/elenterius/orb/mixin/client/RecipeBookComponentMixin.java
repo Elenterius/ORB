@@ -12,7 +12,7 @@ import net.minecraft.client.gui.components.StateSwitchingButton;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookPage;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookTabButton;
-import net.minecraft.client.searchtree.SearchRegistry;
+import net.minecraft.client.multiplayer.SessionSearchTrees;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -39,7 +39,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	private static final int CONTAINER_HEIGHT = 25 * 4;
 
 	@Unique
-	private final IntSupplier orb$IndexingProgress = OrbClient.getIndexingProgress(SearchRegistry.RECIPE_COLLECTIONS);
+	private final IntSupplier orb$IndexingProgress = OrbClient.getIndexingProgress(SessionSearchTrees.RECIPE_COLLECTIONS);
 
 	@Unique
 	private final AtomicReference<RecipeBookPageUpdater.PageUpdate> orb$AtomicPageUpdate = new AtomicReference<>();
@@ -76,6 +76,9 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	@Nullable
 	private EditBox searchBox;
 
+	@Shadow
+	public abstract boolean isVisible();
+
 	@Override
 	public @NonNull AtomicReference<RecipeBookPageUpdater.PageUpdate> orb$getAtomicPageUpdate() {
 		return orb$AtomicPageUpdate;
@@ -84,7 +87,7 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 	@WrapOperation(method = "initVisuals", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/recipebook/RecipeBookComponent;updateCollections(Z)V"))
 	private void onInitVisuals(RecipeBookComponent instance, boolean resetPageNumber, Operation<Void> original) {
 		if (!orb$Initialized) {
-			// do first update with invisible buttons to prevent NPE and Divide By Zero errors because RecipeButton doesn't account for no recipe collections or no craftable recipe
+			// do first update with invisible buttons to prevent NPE because RecipeButton doesn't account for no recipe collections
 			((RecipeBookPageAccessor) recipeBookPage).callListButtons(widget -> widget.visible = false);
 		}
 		else {
@@ -150,8 +153,10 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 		}
 	}
 
-	@Inject(method = "tick", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/client/gui/components/EditBox;tick()V"))
+	@Inject(method = "tick", at = @At("TAIL"))
 	private void onVisibleTabTick(CallbackInfo ci) {
+		if (!isVisible()) return;
+
 		if (orb$IsSearchDebounced) {
 			checkSearchStringUpdate();
 		}
@@ -207,8 +212,6 @@ public abstract class RecipeBookComponentMixin implements RecipeBookPageUpdater.
 
 		int x1 = x + 11 + CONTAINER_WIDTH / 2;
 		int y1 = y + 31 + CONTAINER_HEIGHT / 2 - minecraft.font.lineHeight;
-
-		//guiGraphics.blit(TEXTURE, x1, y1 - minecraft.font.lineHeight / 2 - TEXTURE_V_HEIGHT, 0, 0, TEXTURE_U_WIDTH, TEXTURE_V_HEIGHT, 128, 128);
 
 		guiGraphics.drawCenteredString(minecraft.font, !orb$Initialized ? OrbClient.INITIALIZING_TITLE : OrbClient.INDEXING_TITLE, x1, y1, 0xFF_FAFAFA);
 

@@ -12,11 +12,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.RecipeBookCategories;
 import net.minecraft.client.gui.screens.recipebook.RecipeBookComponent;
 import net.minecraft.client.gui.screens.recipebook.RecipeCollection;
-import net.minecraft.client.searchtree.SearchRegistry;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.inventory.RecipeBookMenu;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -87,7 +87,7 @@ public final class RecipeBookPageUpdater {
 	 * @param fitsDimensions needs to be mutable
 	 * @param craftable      needs to be mutable
 	 */
-	public record RecipeCollectionUpdate(HashSet<Recipe<?>> fitsDimensions, HashSet<Recipe<?>> craftable) {}
+	public record RecipeCollectionUpdate(HashSet<RecipeHolder<?>> fitsDimensions, HashSet<RecipeHolder<?>> craftable) {}
 
 	public record PageUpdate(Map<RecipeCollection, RecipeCollectionUpdate> collectionUpdates, RecipeBookCategories updateCategory, boolean resetPageNumber, Runnable postUpdateCallback) {
 
@@ -143,7 +143,7 @@ public final class RecipeBookPageUpdater {
 		public static UpdateRequest of(RecipeBookComponent recipeBookComponent) {
 			RecipeBookComponentAccessor accessor = (RecipeBookComponentAccessor) recipeBookComponent;
 			ClientRecipeBook recipeBook = accessor.getBook();
-			RecipeBookMenu<?> menu = accessor.getMenu();
+			RecipeBookMenu<?, ?> menu = accessor.getMenu();
 
 			String query = accessor.getSearchBox().getValue();
 			List<RecipeCollection> collections = new LinkedList<>(recipeBook.getCollection(accessor.getSelectedTab().getCategory()));
@@ -170,9 +170,11 @@ public final class RecipeBookPageUpdater {
 			if (client.level == null) throw new RecipeBookUpdateException("Level does not exists");
 			if (client.player == null) throw new RecipeBookUpdateException("Player does not exists");
 
+			ClientPacketListener clientConnection = client.getConnection();
+
 			//remove all collections that don't contain any matching recipes
-			if (!query.isEmpty()) {
-				List<RecipeCollection> result = client.getSearchTree(SearchRegistry.RECIPE_COLLECTIONS).search(query.toLowerCase(Locale.ROOT));
+			if (clientConnection != null && !query.isEmpty()) {
+				List<RecipeCollection> result = clientConnection.searchTrees().recipes().search(query.toLowerCase(Locale.ROOT));
 				ObjectSet<RecipeCollection> resultSet = new ObjectLinkedOpenHashSet<>(result);
 				collections.removeIf(collection -> !resultSet.contains(collection));
 			}
@@ -185,16 +187,16 @@ public final class RecipeBookPageUpdater {
 			//if the recipes change due to datapack reload the game will replace the recipe collections in the recipe book
 			//that means in the worst case the recipe collections we are working with become outdated and the result of this work will be ignored
 			for (RecipeCollection collection : collections) {
-				HashSet<Recipe<?>> fitsDimensions = collection.getRecipes().stream()
-						.map(Recipe::getId)
+				HashSet<RecipeHolder<?>> fitsDimensions = collection.getRecipes().stream()
+						.map(RecipeHolder::id)
 						.filter(knownRecipes::contains)
 						.map(recipeManager::byKey)
 						.flatMap(Optional::stream)
-						.filter(recipe -> recipe.canCraftInDimensions(gridWidth, gridHeight))
+						.filter(recipe -> recipe.value().canCraftInDimensions(gridWidth, gridHeight))
 						.collect(Collectors.toCollection(HashSet::new));
 
-				HashSet<Recipe<?>> craftable = fitsDimensions.stream()
-						.filter(recipe -> stackedContents.canCraft(recipe, null)) //do expensive method call
+				HashSet<RecipeHolder<?>> craftable = fitsDimensions.stream()
+						.filter(recipe -> stackedContents.canCraft(recipe.value(), null)) //do expensive method call
 						.collect(Collectors.toCollection(HashSet::new));
 
 				updates.put(collection, new RecipeCollectionUpdate(fitsDimensions, craftable));
