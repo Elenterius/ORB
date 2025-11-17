@@ -1,5 +1,5 @@
 plugins {
-	id 'net.neoforged.moddev.legacyforge'
+	id 'net.neoforged.moddev'
 	id 'java-library'
 	id 'maven-publish'
 	id 'idea'
@@ -16,11 +16,11 @@ base {
 	archivesName = "${mod_id}-neoforge-${minecraft_version}"
 }
 
-// Mojang ships Java 17 to end users in 1.20.1, so mods should target Java 17.
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+// Mojang ships Java 21 to end users in 1.21.1, so mods should target Java 21.
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-legacyForge {
-	version = project.minecraft_version + '-' + project.forge_version
+neoForge {
+	version = project.neo_version
 
 	parchment {
 		mappingsVersion = project.parchment_mappings_version
@@ -39,7 +39,7 @@ legacyForge {
 			systemProperty("mixin.debug.export", "true")
 			systemProperty("mixin.debug.verbose", "true")
 
-			systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+			systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
 		}
 
 		server {
@@ -51,7 +51,7 @@ legacyForge {
 			systemProperty("mixin.debug.verbose", "true")
 
 			programArgument '--nogui'
-			systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+			systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
 		}
 
 		// This run config launches GameTestServer and runs all registered game tests, then exits.
@@ -60,7 +60,7 @@ legacyForge {
 		gameTestServer {
 			type = "gameTestServer"
 			gameDirectory = project.file('runs/game-test')
-			systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+			systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
 		}
 
 		data {
@@ -73,13 +73,13 @@ legacyForge {
 
 		// applies to all the run configs above
 		configureEach {
-			systemProperty 'forge.logging.markers', 'REGISTRIES'
+//			systemProperty 'forge.logging.markers', 'REGISTRIES'
 			systemProperty('terminal.jline', 'true') // enable interactive & colored terminal features
 
 			// https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
 			logLevel = org.slf4j.event.Level.DEBUG //doesn't work for some reason
 
-			systemProperty("forge.logging.console.level", "debug") //force debug level with system property
+//			systemProperty("forge.logging.console.level", "debug") //force debug level with system property
 		}
 	}
 
@@ -109,39 +109,36 @@ sourceSets.main {
 configurations {
 	runtimeClasspath.extendsFrom localRuntime
 }
-obfuscation {
-	createRemappingConfiguration(configurations.localRuntime)
-}
 
-mixin {
-	add sourceSets.main, "${mod_id}.refmap.json"
-	config "${mod_id}.mixins.json"
-}
+//mixin {
+//	add sourceSets.main, "${mod_id}.refmap.json"
+//	config "${mod_id}.mixins.json"
+//}
 
 dependencies {
-	compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
-	implementation(jarJar("io.github.llamalad7:mixinextras-forge") {
-		version {
-			strictly mixin_extras_version_range
-			prefer mixin_extras_version
-		}
-	})
-
-	annotationProcessor('org.spongepowered:mixin:0.8.5:processor')
+//	compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:${mixin_extras_version}"))
+//	implementation(jarJar("io.github.llamalad7:mixinextras-forge") {
+//		version {
+//			strictly mixin_extras_version_range
+//			prefer mixin_extras_version
+//		}
+//	})
+//
+//	annotationProcessor('org.spongepowered:mixin:0.8.5:processor')
 
 	api("org.jspecify:jspecify:1.0.0")
-	api('org.jetbrains:annotations:26.0.2-1')
+//	api('org.jetbrains:annotations:26.0.2-1')
 	api('org.apache.commons:commons-numbers-combinatorics:1.2')
 	additionalRuntimeClasspath('org.apache.commons:commons-numbers-combinatorics:1.2') // we only need to define the additional runtime classpath for Minecraft versions <= 1.21.8
 
-	modLocalRuntime("curse.maven:connectivity-470193:7032387") // fixes issues with big network packets due to 50k items/recipes
-	modLocalRuntime("curse.maven:cupboard-326652:5470032") // dependency of Connectivity mod
+	localRuntime("curse.maven:connectivity-470193:7032387") // fixes issues with big network packets due to 50k items/recipes
+	localRuntime("curse.maven:cupboard-326652:5470032") // dependency of Connectivity mod
 }
 
 jar {
-	manifest.attributes([
-			"MixinConfigs": "${mod_id}.mixins.json"
-	])
+//	manifest.attributes([
+//			"MixinConfigs": "${mod_id}.mixins.json"
+//	])
 
 	exclude('data')
 	exclude('canterbury_corpus')
@@ -154,8 +151,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 	var replaceProperties = [
 			minecraft_version      : minecraft_version,
 			minecraft_version_range: minecraft_version_range,
-			forge_version          : forge_version,
-			forge_version_range    : forge_version_range,
+			neo_version: neo_version,
 			loader_version_range   : loader_version_range,
 			mod_id                 : mod_id,
 			mod_name               : mod_name,
@@ -176,7 +172,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 // this works with both building through Gradle and the IDE.
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
-legacyForge.ideSyncTask generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
